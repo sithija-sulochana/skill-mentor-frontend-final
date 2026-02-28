@@ -2,69 +2,89 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router";
 import { useAuth, SignInButton, UserButton } from "@clerk/clerk-react";
 import SkillMentorLogo from "@/assets/logo.webp";
-import { Menu, ChevronRight, Home, Users, BookOpen, Shield, LayoutDashboard, LogIn, UserPlus } from "lucide-react";
+import {
+  Menu,
+  ChevronRight,
+  Home,
+  Users,
+  BookOpen,
+  Shield,
+  LayoutDashboard,
+  LogIn,
+  UserPlus,
+  type LucideIcon,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 
-export function Navigation() {
-  const { isSignedIn } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+interface NavLink {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+}
 
-  // Handle scroll effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+const navLinks: NavLink[] = [
+  { to: "/", label: "Tutors", icon: Users },
+  { to: "/", label: "About Us", icon: BookOpen },
+  { to: "/", label: "Resources", icon: Home },
+  { to: "/admin", label: "Admin", icon: Shield },
+];
 
-  const navLinks = [
-    { to: "/", label: "Tutors", icon: Users },
-    { to: "/", label: "About Us", icon: BookOpen },
-    { to: "/", label: "Resources", icon: Home },
-    { to: "/admin", label: "Admin", icon: Shield },
-  ];
+interface NavItemsProps {
+  mobile?: boolean;
+  onItemClick?: () => void;
+}
 
-  const NavItems = ({ mobile = false }: { mobile?: boolean }) => (
+function NavItems({ mobile = false, onItemClick }: NavItemsProps) {
+  return (
     <nav
       className={cn(
         "flex items-center gap-1",
-        mobile && "flex-col items-stretch gap-1 w-full",
+        mobile && "flex-col items-stretch gap-1 w-full"
       )}
     >
-      {navLinks.map((link) => (
-        <Link
-          key={link.label}
-          to={link.to}
-          className={cn(
-            "relative group flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300",
-            mobile
-              ? "text-slate-300 hover:text-white hover:bg-white/10 w-full justify-between"
-              : "text-slate-300 hover:text-white text-sm"
-          )}
-          onClick={() => mobile && setIsOpen(false)}
-        >
-          {mobile && <link.icon className="w-4 h-4 text-slate-400" />}
-          <span>{link.label}</span>
-          {mobile && (
-            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
-          )}
-          {!mobile && (
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-linear-to-r from-blue-500 to-purple-500 group-hover:w-3/4 transition-all duration-300 rounded-full" />
-          )}
-        </Link>
-      ))}
+      {navLinks.map((link) => {
+        const IconComponent = link.icon;
+        return (
+          <Link
+            key={link.label}
+            to={link.to}
+            className={cn(
+              "relative group flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300",
+              mobile
+                ? "text-slate-300 hover:text-white hover:bg-white/10 w-full justify-between"
+                : "text-slate-300 hover:text-white text-sm"
+            )}
+            onClick={onItemClick}
+          >
+            {mobile && <IconComponent className="w-4 h-4 text-slate-400" />}
+            <span>{link.label}</span>
+            {mobile && (
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
+            )}
+            {!mobile && (
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-linear-to-r from-blue-500 to-purple-500 group-hover:w-3/4 transition-all duration-300 rounded-full" />
+            )}
+          </Link>
+        );
+      })}
     </nav>
   );
+}
 
-  const AuthButtons = ({ mobile = false }: { mobile?: boolean }) => (
+interface AuthButtonsProps {
+  mobile?: boolean;
+  isSignedIn: boolean;
+  onItemClick?: () => void;
+}
+
+function AuthButtons({ mobile = false, isSignedIn, onItemClick }: AuthButtonsProps) {
+  return (
     <div
       className={cn(
         "flex items-center gap-3",
-        mobile && "flex-col items-stretch gap-3 w-full",
+        mobile && "flex-col items-stretch gap-3 w-full"
       )}
     >
       {isSignedIn ? (
@@ -72,7 +92,7 @@ export function Navigation() {
           <Link
             to="/dashboard"
             className={cn(mobile && "w-full")}
-            onClick={() => mobile && setIsOpen(false)}
+            onClick={onItemClick}
           >
             <Button
               variant="ghost"
@@ -88,7 +108,7 @@ export function Navigation() {
           <div
             className={cn(
               "flex items-center",
-              mobile && "w-full justify-center py-2",
+              mobile && "w-full justify-center py-2"
             )}
           >
             <div className="ring-2 ring-purple-500/50 ring-offset-2 ring-offset-black rounded-full">
@@ -139,6 +159,23 @@ export function Navigation() {
       )}
     </div>
   );
+}
+
+export function Navigation() {
+  const { isSignedIn } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleMobileItemClick = () => setIsOpen(false);
 
   return (
     <header
@@ -153,10 +190,7 @@ export function Navigation() {
         <div className="flex h-14 items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center gap-8">
-            <Link
-              to="/"
-              className="flex items-center gap-3 group"
-            >
+            <Link to="/" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="absolute -inset-1 bg-linear-to-r from-blue-500 to-purple-500 rounded-full opacity-0 group-hover:opacity-75 blur transition-all duration-500" />
                 <img
@@ -183,7 +217,7 @@ export function Navigation() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden lg:flex items-center gap-4">
-            <AuthButtons />
+            <AuthButtons isSignedIn={isSignedIn ?? false} />
           </div>
 
           {/* Mobile Menu Button */}
@@ -199,17 +233,14 @@ export function Navigation() {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="w-[320px] bg-linear-to-b from-slate-950 to-black border-l border-white/10 p-0"
-              >
+              <SheetContent className="w-[320px] bg-linear-to-b from-slate-950 to-black border-l border-white/10 p-0">
                 <div className="flex flex-col h-full">
                   {/* Mobile Header */}
                   <div className="p-6 border-b border-white/10">
                     <Link
                       to="/"
                       className="flex items-center gap-3"
-                      onClick={() => setIsOpen(false)}
+                      onClick={handleMobileItemClick}
                     >
                       <div className="relative">
                         <div className="absolute -inset-1 bg-linear-to-r from-blue-500 to-purple-500 rounded-full opacity-50 blur" />
@@ -220,7 +251,9 @@ export function Navigation() {
                         />
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-xl text-white">SkillMentor</span>
+                        <span className="font-bold text-xl text-white">
+                          SkillMentor
+                        </span>
                         <span className="text-xs text-slate-400 font-medium tracking-wider">
                           Learn & Grow
                         </span>
@@ -233,7 +266,7 @@ export function Navigation() {
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
                       Navigation
                     </p>
-                    <NavItems mobile />
+                    <NavItems mobile onItemClick={handleMobileItemClick} />
                   </div>
 
                   {/* Mobile Auth Section */}
@@ -241,7 +274,11 @@ export function Navigation() {
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
                       Account
                     </p>
-                    <AuthButtons mobile />
+                    <AuthButtons
+                      mobile
+                      isSignedIn={isSignedIn ?? false}
+                      onItemClick={handleMobileItemClick}
+                    />
                   </div>
                 </div>
               </SheetContent>

@@ -5,7 +5,7 @@ import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import PaymentPage from "@/pages/PaymentPage";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
-import ProfilePage from "@/components/profilePage";
+import ProfilePage from "@/components/ProfilePage";
 
 import AdminLayout from "@/pages/admin/AdminLayout";
 import CreateSubject from "@/pages/admin/CreateSubject";
@@ -25,11 +25,14 @@ function App() {
             <SignedIn><AdminLayout /></SignedIn>
             
             }>
+
+            
            
             <Route path="create-subject" element={<CreateSubject />} />
             <Route path="create-mentor" element={<CreateMentor />} />
             <Route path="bookings" element={<ManageBooking />} />
           </Route>
+          <Route path="mentors/:mentorId" element={<ProfilePage />} />
           <Route
             path="/dashboard"
             element={

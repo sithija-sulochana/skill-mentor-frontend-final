@@ -70,6 +70,7 @@ export default function CreateMentor() {
     profileImageBase64: "",
     startYear: "",
     isCertified: false,
+    createAt: new Date().toISOString(),
   };
 
   const [formData, setFormData] = useState<FormData>(initialState);
@@ -137,7 +138,7 @@ export default function CreateMentor() {
     return Object.keys(newErrors).length === 0;
   };
 
-  /* ================= CHANGE HANDLER ================= */
+  /*  CHANGE HANDLER */
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -156,7 +157,7 @@ export default function CreateMentor() {
     }
   };
 
-  /* ================= SUBMIT ================= */
+  /* SUBMIT  */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -186,6 +187,11 @@ export default function CreateMentor() {
           profileImageUrl: formData.profileImageBase64,
           experienceYears: Number(formData.experienceYears),
           startYear: Number(formData.startYear),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          createAt : new Date().toISOString(),
+
+
         }),
       });
 

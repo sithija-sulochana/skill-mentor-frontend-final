@@ -13,13 +13,18 @@ import { SchedulingModal } from "@/components/SchedulingModel";
 import { SignupDialog } from "@/components/SignUpDialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@clerk/clerk-react";
+import { useNavigate } from "react-router";
 
 interface MentorCardProps {
   mentor: Mentor;
 }
 
 
+
+
 export function MentorCard({ mentor }: MentorCardProps) {
+
+  const navigate = useNavigate();
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -42,7 +47,7 @@ export function MentorCard({ mentor }: MentorCardProps) {
     setIsSchedulingModalOpen(true);
   };
   console.log("Fetching reviews for mentor:", subjects[0]?.courseIcon);
-    console.log(mentor);
+  console.log(mentor);
 
   return (
     <>
@@ -69,7 +74,14 @@ export function MentorCard({ mentor }: MentorCardProps) {
                     {mentor.firstName.charAt(0)}
                   </div>
                 )}
-                <span className="text-sm">{mentorName}</span>
+                <span
+                  className="text-sm cursor-pointer hover:underline"
+                  onClick={() => navigate(`/mentors/${mentor.id}`)}
+                >
+                  <a href={`/mentors/${mentor.id}`}></a>
+                  
+                  {mentorName}
+                </span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Building2 className="size-6" />
@@ -87,7 +99,7 @@ export function MentorCard({ mentor }: MentorCardProps) {
                   alt={courseTitle}
                   className="size-20 object-cover"
                 />
-                
+
               ) : (
                 <div className="size-20 bg-muted flex items-center justify-center">
                   <span className="text-2xl font-semibold">
