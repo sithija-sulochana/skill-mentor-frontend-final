@@ -5,6 +5,12 @@ import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import PaymentPage from "@/pages/PaymentPage";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import ProfilePage from "@/components/profilePage";
+
+import AdminLayout from "@/pages/admin/AdminLayout";
+import CreateSubject from "@/pages/admin/CreateSubject";
+import CreateMentor from "@/pages/admin/CreateMentor";
+import ManageBooking from "@/pages/admin/ManageBooking";
 
 function App() {
   return (
@@ -13,12 +19,25 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin" element={
+            
+            <SignedIn><AdminLayout /></SignedIn>
+            
+            }>
+           
+            <Route path="create-subject" element={<CreateSubject />} />
+            <Route path="create-mentor" element={<CreateMentor />} />
+            <Route path="bookings" element={<ManageBooking />} />
+          </Route>
           <Route
             path="/dashboard"
             element={
               <>
                 <SignedIn>
                   <DashboardPage />
+
+
                 </SignedIn>
                 <SignedOut>
                   <LoginPage />

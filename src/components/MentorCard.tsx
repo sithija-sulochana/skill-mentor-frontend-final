@@ -18,16 +18,19 @@ interface MentorCardProps {
   mentor: Mentor;
 }
 
+
 export function MentorCard({ mentor }: MentorCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { isSignedIn } = useAuth();
 
+  const subjects = Array.isArray(mentor.subjects) ? mentor.subjects : [];
   const mentorName = `${mentor.firstName} ${mentor.lastName}`;
-  const hasSubjects = mentor.subjects.length > 0;
-  const courseTitle = mentor.subjects[0]?.subjectName ?? "";
-  const courseImageUrl = mentor.subjects[0]?.courseImageUrl ?? "";
+  console.log("Rendering MentorCard for:", mentorName);
+  const hasSubjects = subjects.length > 0;
+  const courseTitle = subjects[0]?.subjectName ?? "";
+  const courseIcon = subjects[0]?.courseIcon ?? "";
   const bio = mentor.bio ?? "";
   const bioTooLong = bio.length > 200;
 
@@ -38,6 +41,8 @@ export function MentorCard({ mentor }: MentorCardProps) {
     }
     setIsSchedulingModalOpen(true);
   };
+  console.log("Fetching reviews for mentor:", subjects[0]?.courseIcon);
+    console.log(mentor);
 
   return (
     <>
@@ -76,12 +81,13 @@ export function MentorCard({ mentor }: MentorCardProps) {
               </div>
             </div>
             <div className="w-36">
-              {courseImageUrl ? (
+              {courseIcon ? (
                 <img
-                  src={courseImageUrl}
+                  src={courseIcon}
                   alt={courseTitle}
                   className="size-20 object-cover"
                 />
+                
               ) : (
                 <div className="size-20 bg-muted flex items-center justify-center">
                   <span className="text-2xl font-semibold">

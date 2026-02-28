@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MentorCard } from "@/components/MentorCard";
 import { getPublicMentors } from "@/lib/api";
 import { Link } from "react-router";
@@ -10,13 +10,31 @@ export default function HomePage() {
   const { isSignedIn } = useAuth();
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
+
+  const loadMentors = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await getPublicMentors();
+      setMentors(data.content);
+    } catch (err) {
+      setMentors([]);
+      setError(
+        err instanceof Error ? err.message : "Unable to load mentors right now.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    getPublicMentors()
-      .then((data) => setMentors(data.content))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+    void loadMentors();
+  }, [loadMentors]);
 
   return (
     <div className="py-10">
@@ -55,6 +73,13 @@ export default function HomePage() {
         {loading ? (
           <div className="text-center py-10 text-muted-foreground">
             Loading mentors...
+          </div>
+        ) : error ? (
+          <div className="text-center py-10 space-y-4">
+            <p className="text-muted-foreground">{error}</p>
+            <Button onClick={() => void loadMentors()} variant="outline">
+              Retry
+            </Button>
           </div>
         ) : mentors.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
