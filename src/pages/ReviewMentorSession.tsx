@@ -135,11 +135,34 @@ export default function ReviewMentorSession() {
         throw new Error("Session not found");
       }
 
+      // Fetch full session details to get mentor ID and student ID
+      const sessionRes = await fetch(
+        `${API_BASE_URL}/api/v1/sessions/${selectedSession.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!sessionRes.ok) {
+        throw new Error("Failed to fetch session details");
+      }
+
+      const fullSession = await sessionRes.json();
+
       const reviewDTO = {
-        sessionId: parseInt(formData.sessionId),
+        studentId: fullSession.student?.id,
+        mentorId: fullSession.mentor?.id,
+        sessionId: fullSession.id,
         rating: formData.rating,
         review: formData.review.trim(),
       };
+
+      console.log("Full Session Data:", fullSession);
+
+      console.log("Submitting review:", reviewDTO);
 
       const res = await fetch(`${API_BASE_URL}/api/v1/reviews`, {
         method: "POST",

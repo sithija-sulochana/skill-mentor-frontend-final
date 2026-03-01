@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { SignOutButton, useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -143,6 +143,16 @@ export default function ManageBookings() {
   }>({ open: false, sessionId: null, currentLink: "" });
   const [newMeetingLink, setNewMeetingLink] = useState("");
 
+  // Status change dialog state
+  const [statusDialog, setStatusDialog] = useState<{
+    open: boolean;
+    sessionId: number | null;
+    currentStatus: Session["sessionStatus"] | null;
+    currentPaymentStatus: Session["paymentStatus"] | null;
+  }>({ open: false, sessionId: null, currentStatus: null, currentPaymentStatus: null });
+  const [newSessionStatus, setNewSessionStatus] = useState<Session["sessionStatus"]>("SCHEDULED");
+  const [newPaymentStatus, setNewPaymentStatus] = useState<Session["paymentStatus"]>("PENDING");
+
   // Fetch all sessions
   const fetchSessions = async () => {
     try {
@@ -185,9 +195,25 @@ export default function ManageBookings() {
       setUpdating(sessionId);
       const token = await getToken({ template: "skill-mentor" });
 
-      // Find current session to merge updates
+      // Fetch the full session to get mentor and subject IDs
+      // (the list endpoint returns flat DTO without IDs)
+      const fullSessionRes = await fetch(
+        `${API_BASE_URL}/api/v1/sessions/${sessionId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!fullSessionRes.ok) throw new Error("Failed to fetch session details");
+      const fullSession = await fullSessionRes.json();
+
+      // Find current session from local state for display data
       const currentSession = sessions.find((s) => s.id === sessionId);
       if (!currentSession) return;
+      console.log("Current Session:", currentSession.student?.id);
 
       const res = await fetch(`${API_BASE_URL}/api/v1/sessions/${sessionId}`, {
         method: "PUT",
@@ -196,15 +222,24 @@ export default function ManageBookings() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          mentorId: currentSession.mentor?.id,
-          subjectId: currentSession.subject?.id,
-          sessionAt: currentSession.sessionAt,
-          durationMinutes: currentSession.durationMinutes,
-          ...updates,
+          studentId: fullSession.student?.id,
+          mentorId: fullSession.mentor?.id,
+          subjectId: fullSession.subject?.id,
+          sessionAt: fullSession.sessionAt || currentSession.sessionAt,
+          durationMinutes: fullSession.durationMinutes || currentSession.durationMinutes,
+          sessionStatus: updates.sessionStatus || fullSession.sessionStatus,
+          paymentStatus: updates.paymentStatus || fullSession.paymentStatus,
+          meetingLink: updates.meetingLink !== undefined ? updates.meetingLink : fullSession.meetingLink,
         }),
       });
+      console.log("Full session IDs:", fullSession.student?.id, fullSession.mentor?.id, fullSession.subject?.id);
 
-      if (!res.ok) throw new Error("Failed to update session");
+      // console.log("Current Session:", currentSession);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Update failed:", errorText);
+        throw new Error("Failed to update session");
+      }
 
       // Refresh data
       await fetchSessions();
@@ -244,6 +279,16 @@ export default function ManageBookings() {
     updateSession(meetingLinkDialog.sessionId, { meetingLink: newMeetingLink });
     setMeetingLinkDialog({ open: false, sessionId: null, currentLink: "" });
     setNewMeetingLink("");
+  };
+
+  // Update session status
+  const handleUpdateStatus = () => {
+    if (!statusDialog.sessionId) return;
+    updateSession(statusDialog.sessionId, {
+      sessionStatus: newSessionStatus,
+      paymentStatus: newPaymentStatus,
+    });
+    setStatusDialog({ open: false, sessionId: null, currentStatus: null, currentPaymentStatus: null });
   };
 
   // Delete session
@@ -512,9 +557,8 @@ export default function ManageBookings() {
       <div className="flex items-center gap-1">
         {children}
         <ArrowUpDown
-          className={`w-4 h-4 ${
-            sortField === field ? "text-blue-600" : "text-slate-400"
-          }`}
+          className={`w-4 h-4 ${sortField === field ? "text-blue-600" : "text-slate-400"
+            }`}
         />
       </div>
     </TableHead>
@@ -796,6 +840,7 @@ export default function ManageBookings() {
                         <SortableHeader field="subjectName">Subject</SortableHeader>
                         <SortableHeader field="sessionAt">Date/Time</SortableHeader>
                         <SortableHeader field="durationMinutes">Duration</SortableHeader>
+                        <TableHead>Meeting Link</TableHead>
                         <SortableHeader field="paymentStatus">Payment</SortableHeader>
                         <SortableHeader field="sessionStatus">Status</SortableHeader>
                         <TableHead className="text-right">Actions</TableHead>
@@ -895,6 +940,25 @@ export default function ManageBookings() {
                               </span>
                             </TableCell>
 
+                            {/* Meeting Link */}
+                            <TableCell>
+                              {session.meetingLink ? (
+                                <a
+                                  href={session.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs font-medium hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors max-w-[150px]"
+                                >
+                                  <Video className="w-3.5 h-3.5 shrink-0" />
+                                  <span className="truncate">{session.meetingLink.replace(/^https?:\/\//, "").substring(0, 20)}...</span>
+                                </a>
+                              ) : (
+                                <span className="text-xs text-slate-400 dark:text-slate-500 italic">
+                                  No link added
+                                </span>
+                              )}
+                            </TableCell>
+
                             {/* Payment Status */}
                             <TableCell>
                               <Badge className={paymentStatus.className}>
@@ -956,25 +1020,44 @@ export default function ManageBookings() {
                                   )}
 
                                 {/* Add Meeting Link Button */}
-                                {session.sessionStatus === "SCHEDULED" && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setMeetingLinkDialog({
-                                        open: true,
-                                        sessionId: session.id,
-                                        currentLink: session.meetingLink || "",
-                                      });
-                                      setNewMeetingLink(session.meetingLink || "");
-                                    }}
-                                    disabled={isUpdating}
-                                    className="text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300"
-                                  >
-                                    <Video className="w-4 h-4 mr-1" />
-                                    {session.meetingLink ? "Edit" : "Add"} Link
-                                  </Button>
-                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setMeetingLinkDialog({
+                                      open: true,
+                                      sessionId: session.id,
+                                      currentLink: session.meetingLink || "",
+                                    });
+                                    setNewMeetingLink(session.meetingLink || "");
+                                  }}
+                                  disabled={isUpdating}
+                                  className="text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300"
+                                >
+                                  <Video className="w-4 h-4 mr-1" />
+                                  {session.meetingLink ? "Edit" : "Add"} Link
+                                </Button>
+
+                                {/* Change Status Button */}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setStatusDialog({
+                                      open: true,
+                                      sessionId: session.id,
+                                      currentStatus: session.sessionStatus,
+                                      currentPaymentStatus: session.paymentStatus,
+                                    });
+                                    setNewSessionStatus(session.sessionStatus);
+                                    setNewPaymentStatus(session.paymentStatus);
+                                  }}
+                                  disabled={isUpdating}
+                                  className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                                >
+                                  <Users className="w-4 h-4 mr-1" />
+                                  Status
+                                </Button>
 
                                 {/* Delete Button */}
                                 <AlertDialog>
@@ -1139,6 +1222,135 @@ export default function ManageBookings() {
                 <Video className="w-4 h-4 mr-2" />
               )}
               Save Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Session Status Dialog */}
+      <Dialog
+        open={statusDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStatusDialog({ open: false, sessionId: null, currentStatus: null, currentPaymentStatus: null });
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              Update Session Status
+            </DialogTitle>
+            <DialogDescription>
+              Change the session and payment status for this booking
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            {/* Session Status */}
+            <div>
+              <Label htmlFor="new-session-status" className="text-sm font-medium mb-2 block">
+                Session Status
+              </Label>
+              <Select
+                value={newSessionStatus}
+                onValueChange={(val) => setNewSessionStatus(val as Session["sessionStatus"])}
+              >
+                <SelectTrigger id="new-session-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SCHEDULED">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-500" />
+                      Scheduled
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="COMPLETED">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      Completed
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="CANCELLED">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-red-500" />
+                      Cancelled
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="NO_SHOW">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-orange-500" />
+                      No Show
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Payment Status */}
+            <div>
+              <Label htmlFor="new-payment-status" className="text-sm font-medium mb-2 block">
+                Payment Status
+              </Label>
+              <Select
+                value={newPaymentStatus}
+                onValueChange={(val) => setNewPaymentStatus(val as Session["paymentStatus"])}
+              >
+                <SelectTrigger id="new-payment-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDING">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-yellow-500" />
+                      Pending
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="CONFIRMED">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-blue-500" />
+                      Confirmed
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="COMPLETED">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      Completed
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="REFUNDED">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-purple-500" />
+                      Refunded
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStatusDialog({ open: false, sessionId: null, currentStatus: null, currentPaymentStatus: null });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateStatus}
+              disabled={updating !== null}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {updating !== null ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+              )}
+              Update Status
             </Button>
           </DialogFooter>
         </DialogContent>

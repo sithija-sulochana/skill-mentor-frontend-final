@@ -204,6 +204,9 @@ export function SchedulingModal({
 
   // Handle scheduling
   const handleSchedule = async () => {
+      if (loading) return; 
+
+  setLoading(true);
     if (!date || !selectedTime || !selectedSubject) {
       setError("Please select a date, time, and subject");
       return;
