@@ -79,14 +79,14 @@ interface Session {
     lastName: string;
     email: string;
   };
-  mentor: {
+  mentor?: {
     id: number;
     firstName: string;
     lastName: string;
     email: string;
     profileImageUrl?: string;
   };
-  subject: {
+  subject?: {
     id: number;
     subjectName: string;
     description?: string;
@@ -196,8 +196,8 @@ export default function ManageBookings() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          mentorId: currentSession.mentor.id,
-          subjectId: currentSession.subject.id,
+          mentorId: currentSession.mentor?.id,
+          subjectId: currentSession.subject?.id,
           sessionAt: currentSession.sessionAt,
           durationMinutes: currentSession.durationMinutes,
           ...updates,
@@ -289,9 +289,9 @@ export default function ManageBookings() {
         (session) =>
           session.student?.firstName?.toLowerCase().includes(term) ||
           session.student?.lastName?.toLowerCase().includes(term) ||
-          session.mentor.firstName.toLowerCase().includes(term) ||
-          session.mentor.lastName.toLowerCase().includes(term) ||
-          session.subject.subjectName.toLowerCase().includes(term) ||
+          session.mentor?.firstName?.toLowerCase().includes(term) ||
+          session.mentor?.lastName?.toLowerCase().includes(term) ||
+          session.subject?.subjectName?.toLowerCase().includes(term) ||
           session.id.toString().includes(term)
       );
     }
@@ -341,12 +341,12 @@ export default function ManageBookings() {
           bVal = `${b.student?.firstName || ""} ${b.student?.lastName || ""}`.toLowerCase();
           break;
         case "mentorName":
-          aVal = `${a.mentor.firstName} ${a.mentor.lastName}`.toLowerCase();
-          bVal = `${b.mentor.firstName} ${b.mentor.lastName}`.toLowerCase();
+          aVal = `${a.mentor?.firstName || ""} ${a.mentor?.lastName || ""}`.toLowerCase();
+          bVal = `${b.mentor?.firstName || ""} ${b.mentor?.lastName || ""}`.toLowerCase();
           break;
         case "subjectName":
-          aVal = a.subject.subjectName.toLowerCase();
-          bVal = b.subject.subjectName.toLowerCase();
+          aVal = (a.subject?.subjectName || "").toLowerCase();
+          bVal = (b.subject?.subjectName || "").toLowerCase();
           break;
         case "durationMinutes":
           aVal = a.durationMinutes;
@@ -842,7 +842,7 @@ export default function ManageBookings() {
                             {/* Mentor */}
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                {session.mentor.profileImageUrl ? (
+                                {session.mentor?.profileImageUrl ? (
                                   <img
                                     src={session.mentor.profileImageUrl}
                                     alt=""
@@ -850,16 +850,18 @@ export default function ManageBookings() {
                                   />
                                 ) : (
                                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold">
-                                    {session.mentor.firstName.charAt(0)}
-                                    {session.mentor.lastName.charAt(0)}
+                                    {session.mentor?.firstName?.charAt(0) || "M"}
+                                    {session.mentor?.lastName?.charAt(0) || ""}
                                   </div>
                                 )}
                                 <div className="min-w-0">
                                   <p className="font-medium text-slate-900 dark:text-white truncate">
-                                    {session.mentor.firstName} {session.mentor.lastName}
+                                    {session.mentor
+                                      ? `${session.mentor.firstName} ${session.mentor.lastName}`
+                                      : "Unknown Mentor"}
                                   </p>
                                   <p className="text-xs text-slate-500 truncate">
-                                    {session.mentor.email}
+                                    {session.mentor?.email || "-"}
                                   </p>
                                 </div>
                               </div>
@@ -868,7 +870,7 @@ export default function ManageBookings() {
                             {/* Subject */}
                             <TableCell>
                               <Badge variant="outline" className="font-medium">
-                                {session.subject.subjectName}
+                                {session.subject?.subjectName || "Unknown Subject"}
                               </Badge>
                             </TableCell>
 

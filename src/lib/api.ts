@@ -16,8 +16,21 @@ async function fetchWithAuth(
       ...options.headers,
     },
   });
+  
+  console.log(`API Request: ${options.method || "GET"} ${endpoint} - Status: ${res.status}`);
 
   if (!res.ok) {
+    // Handle token expiration/authentication errors
+    if (res.status === 401) {
+      console.error("Authentication failed - token may be expired");
+      throw new Error("Session expired. Please sign in again.");
+    }
+    
+    if (res.status === 403) {
+      console.error("Access forbidden");
+      throw new Error("Access denied. You don't have permission for this action.");
+    }
+
     const errorText = await res.text();
     let errorMessage = `HTTP ${res.status}`;
     try {
@@ -46,17 +59,12 @@ export async function getPublicMentors(
   return res.json();
 }
 
-// Enrollments
+// Enrollments - matches backend SessionDTO
 export interface EnrollSessionData {
-  id: number;  // Database mentor ID (Long)
+  mentorId: number;  // Database mentor ID (Long)
   subjectId: number;
   sessionAt: string;
   durationMinutes?: number;
-  // Student info from Clerk
-  studentEmail: string;
-  studentFirstName: string;
-  studentLastName: string;
-  
 }
 
 export async function enrollInSession(

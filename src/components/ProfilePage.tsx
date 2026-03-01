@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,6 +63,7 @@ interface Mentor {
   subjects?: Subject[];
 }
 
+
 interface Session {
   id: number;
   sessionAt: string;
@@ -76,6 +78,7 @@ interface Session {
 
 export default function ProfilePage() {
   const { mentorId } = useParams();
+  const { getToken } = useAuth();
 
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -104,9 +107,17 @@ export default function ProfilePage() {
       console.log("Fetched mentor data:", mentorData);
 
       // Fetch Sessions
+      const token = await getToken({ template: "skill-mentor" });
       const sessionRes = await fetch(
-        `${API_BASE_URL}/api/v1/sessions/mentor/${mentorId}`
+        `${API_BASE_URL}/api/v1/sessions/mentors/${mentorId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+
+      console.log("Fetched sessions response:", sessionRes);
 
       if (sessionRes.ok) {
         const sessionData: Session[] = await sessionRes.json();
@@ -584,80 +595,95 @@ export default function ProfilePage() {
 
           {/* Right Column - Sessions */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                    Recent Sessions
-                  </h3>
-                  <Badge variant="outline">{sessions.length} total</Badge>
-                </div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Video className="w-5 h-5 text-blue-600" />
+                Sessions
+              </h3>
+              <Badge variant="outline">{sessions.length} total</Badge>
+            </div>
 
-                {sessions.length === 0 ? (
+            {sessions.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
                   <div className="text-center py-8">
                     <Calendar className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
                     <p className="text-slate-500 dark:text-slate-400">
                       No sessions available yet.
                     </p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {sessions.slice(0, 5).map((session) => {
-                      const statusConfig = getStatusConfig(session.sessionStatus);
-                      const StatusIcon = statusConfig.icon;
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {sessions.map((session) => {
+                  const statusConfig = getStatusConfig(session.sessionStatus);
+                  const StatusIcon = statusConfig.icon;
 
-                      return (
-                        <div
-                          key={session.id}
-                          className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                              <h4 className="font-semibold text-slate-900 dark:text-white break-words">
-                                {session.subject?.subjectName || session.subject?.name || "Session"}
-                              </h4>
-                              <Badge className={`${statusConfig.className} w-fit`}>
-                                <StatusIcon className="w-3 h-3 mr-1" />
-                                {statusConfig.label}
-                              </Badge>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
-                              <span className="flex items-center gap-1.5">
-                                <Calendar className="w-4 h-4" />
-                                {formatDate(session.sessionAt)}
-                              </span>
-                              <span className="flex items-center gap-1.5">
-                                <Clock className="w-4 h-4" />
-                                {formatTime(session.sessionAt)}
-                                {session.durationMinutes && (
-                                  <span>({session.durationMinutes} min)</span>
-                                )}
-                              </span>
-                            </div>
-                          </div>
-
-                          {session.sessionStatus === "SCHEDULED" && session.meetingLink && (
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 shrink-0 w-full sm:w-auto">
-                              <Video className="w-4 h-4 mr-1" />
-                              Join
-                            </Button>
+                  return (
+                    <Card key={session.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      {/* Session Header with Status */}
+                      <div className={`px-4 py-3 ${statusConfig.className} border-b`}>
+                        <div className="flex items-center justify-between">
+                          <Badge className={statusConfig.className}>
+                            <StatusIcon className="w-3 h-3 mr-1" />
+                            {statusConfig.label}
+                          </Badge>
+                          {session.durationMinutes && (
+                            <span className="text-xs font-medium flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {session.durationMinutes} min
+                            </span>
                           )}
                         </div>
-                      );
-                    })}
+                      </div>
 
-                    {sessions.length > 5 && (
-                      <>
-                        <Separator />
-                        <Button variant="ghost" className="w-full">
-                          View all {sessions.length} sessions
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <CardContent className="pt-4">
+                        {/* Subject Name */}
+                        <h4 className="font-semibold text-lg text-slate-900 dark:text-white mb-3">
+                          {session.subject?.subjectName || session.subject?.name || "Session"}
+                        </h4>
+
+                        {/* Date & Time */}
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                            <Calendar className="w-4 h-4 text-blue-500" />
+                            <span>{formatDate(session.sessionAt)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                            <Clock className="w-4 h-4 text-purple-500" />
+                            <span>{formatTime(session.sessionAt)}</span>
+                          </div>
+                        </div>
+
+                        {/* Session Notes */}
+                        {session.sessionNotes && (
+                          <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">
+                            {session.sessionNotes}
+                          </p>
+                        )}
+
+                        {/* Join Button for Scheduled Sessions */}
+                        {session.sessionStatus === "SCHEDULED" && session.meetingLink && (
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                            <Video className="w-4 h-4 mr-2" />
+                            Join Session
+                          </Button>
+                        )}
+
+                        {/* Completed Session Indicator */}
+                        {session.sessionStatus === "COMPLETED" && (
+                          <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium">
+                            <CheckCircle2 className="w-4 h-4" />
+                            Session Completed
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -11,6 +11,8 @@ import AdminLayout from "@/pages/admin/AdminLayout";
 import CreateSubject from "@/pages/admin/CreateSubject";
 import CreateMentor from "@/pages/admin/CreateMentor";
 import ManageBooking from "@/pages/admin/ManageBooking";
+import AboutUs from "@/pages/AboutUs";
+import ReviewMentorSession from "./pages/ReviewMentorSession";
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
             <Route path="bookings" element={<ManageBooking />} />
           </Route>
           <Route path="mentors/:mentorId" element={<ProfilePage />} />
+          <Route path="/aboutus" element={<AboutUs />} />
+          <Route path="/review" element={<ReviewMentorSession />} />
           <Route
             path="/dashboard"
             element={

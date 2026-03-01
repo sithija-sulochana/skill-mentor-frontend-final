@@ -75,9 +75,10 @@ export function SchedulingModal({
   isOpen,
   onClose,
   mentor,
+
 }: SchedulingModalProps) {
-  const { getToken, isSignedIn } = useAuth();
-  const { user } = useUser();
+  const { getToken } = useAuth();
+  const { user, isLoaded, isSignedIn } = useUser();
   const navigate = useNavigate();
 
   // Form state
@@ -152,7 +153,7 @@ export function SchedulingModal({
     fetchBookedSessions();
   }, [date, mentor.id]);
 
-
+  console.log(user?.id)
   // Check if a time slot conflicts with existing bookings
   const isSlotBooked = (time: string): boolean => {
     if (!date || bookedSessions.length === 0) return false;
@@ -228,37 +229,24 @@ export function SchedulingModal({
       setLoading(true);
       setError(null);
 
-      const token = await getToken({ template: "skill-mentor" });
+      // Force a fresh token to avoid expiration issues
+      const token = await getToken({ template: "skill-mentor", skipCache: true });
       if (!token) {
         setError("Authentication failed. Please sign in again.");
         return;
       }
 
-      // Get student info from Clerk user
-      const studentEmail = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses[0]?.emailAddress || "";
-      console.log("Student email:", studentEmail);
-      const studentFirstName = user?.firstName || "";
-      const studentLastName = user?.lastName || "";
-
-      if (!studentEmail) {
-        setError("Unable to retrieve your email. Please update your profile.");
-        return;
-      }
-
-      console.log("mentor id "+ mentor.id)
-      // Call the enrollment API with student info
+      console.log("mentor id " + mentor.id)
+      // Call the enrollment API - backend gets student info from JWT token
       const enrollmentData = {
-        id: mentor.id,  // Database ID (Long)
+        mentorId: mentor.id,  // Database ID (Long)
         subjectId: selectedSubject.id,
         sessionAt: sessionDateTime.toISOString(),
         durationMinutes: duration,
-        studentEmail: studentEmail,
-        studentFirstName: studentFirstName,
-        studentLastName: studentLastName,
       };
       console.log("Enrollment request data:", enrollmentData);
       const enrollment = await enrollInSession(token, enrollmentData);
-      
+
 
       setSuccess(true);
 
@@ -524,15 +512,14 @@ export function SchedulingModal({
                             size="sm"
                             disabled={isDisabled}
                             onClick={() => setSelectedTime(time)}
-                            className={`relative ${
-                              isSelected
+                            className={`relative ${isSelected
                                 ? "bg-blue-600 hover:bg-blue-700 text-white"
                                 : status === "booked"
-                                ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-400 cursor-not-allowed"
-                                : status === "past"
-                                ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                                : "hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300"
-                            }`}
+                                  ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-400 cursor-not-allowed"
+                                  : status === "past"
+                                    ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+                                    : "hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300"
+                              }`}
                           >
                             {time}
                             {status === "booked" && (
