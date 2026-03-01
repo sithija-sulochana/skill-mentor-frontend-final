@@ -37,7 +37,7 @@ function CreateSubject() {
   const [formData, setFormData] = useState({
     subjectName: "",
     description: "",
-    imageUrl: "", // Stores the Base64 String
+    courseImageUrl: "", // Stores the Base64 String
     mentorId: "",
   });
 
@@ -76,7 +76,7 @@ function CreateSubject() {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, imageUrl: reader.result as string }));
+        setFormData((prev) => ({ ...prev, courseImageUrl: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -101,7 +101,7 @@ function CreateSubject() {
 
       if (response.ok) {
         alert("Subject created successfully!");
-        setFormData({ subjectName: "", description: "", imageUrl: "", mentorId: "" });
+        setFormData({ subjectName: "", description: "", courseImageUrl: "", mentorId: "" });
       } else {
         const errData = await response.json();
         alert(`Error: ${errData.message || "Failed to create subject"}`);
@@ -179,7 +179,7 @@ function CreateSubject() {
                   Subject Image
                 </Label>
                 
-                {!formData.imageUrl ? (
+                {!formData.courseImageUrl ? (
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 hover:bg-slate-100 transition-colors">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <Upload className="w-8 h-8 mb-2 text-slate-400" />
@@ -190,13 +190,13 @@ function CreateSubject() {
                   </label>
                 ) : (
                   <div className="relative rounded-lg overflow-hidden border border-slate-200">
-                    <img src={formData.imageUrl} alt="Preview" className="w-full h-48 object-cover" />
+                    <img src={formData.courseImageUrl} alt="Preview" className="w-full h-48 object-cover" />
                     <Button 
                       type="button" 
                       variant="destructive" 
                       size="icon" 
                       className="absolute top-2 right-2 rounded-full h-8 w-8"
-                      onClick={() => setFormData(prev => ({ ...prev, imageUrl: "" }))}
+                      onClick={() => setFormData(prev => ({ ...prev, courseImageUrl: "" }))}
                     >
                       <X className="h-4 w-4" />
                     </Button>

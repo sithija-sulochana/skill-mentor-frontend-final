@@ -18,8 +18,17 @@ async function fetchWithAuth(
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: "Request failed" }));
-    throw new Error(error.message || `HTTP ${res.status}`);
+    const errorText = await res.text();
+    let errorMessage = `HTTP ${res.status}`;
+    try {
+      const error = JSON.parse(errorText);
+      errorMessage = error.message || error.error || errorMessage;
+      console.error("API Error:", error);
+    } catch {
+      errorMessage = errorText || errorMessage;
+      console.error("API Error (text):", errorText);
+    }
+    throw new Error(errorMessage);
   }
 
   return res;
@@ -38,14 +47,21 @@ export async function getPublicMentors(
 }
 
 // Enrollments
+export interface EnrollSessionData {
+  id: number;  // Database mentor ID (Long)
+  subjectId: number;
+  sessionAt: string;
+  durationMinutes?: number;
+  // Student info from Clerk
+  studentEmail: string;
+  studentFirstName: string;
+  studentLastName: string;
+  
+}
+
 export async function enrollInSession(
   token: string,
-  data: {
-    mentorId: number;
-    subjectId: number;
-    sessionAt: string;
-    durationMinutes?: number;
-  },
+  data: EnrollSessionData,
 ): Promise<Enrollment> {
   const res = await fetchWithAuth("/api/v1/sessions/enroll", token, {
     method: "POST",
@@ -56,5 +72,60 @@ export async function enrollInSession(
 
 export async function getMyEnrollments(token: string): Promise<Enrollment[]> {
   const res = await fetchWithAuth("/api/v1/sessions/my-sessions", token);
+  return res.json();
+}
+
+// Student registration/sync
+export interface StudentCreateData {
+  studentId: string;    // Clerk user ID
+  email: string;
+  firstName: string;
+  lastName: string;
+  learningGoals?: string;
+}
+
+export interface Student {
+  id: number;
+  studentId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  learningGoals?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Register/create student in backend.
+ * Sends Clerk user credentials in the request body.
+ * Called automatically when user logs in via Clerk.
+ */
+export async function createStudent(
+  token: string,
+  data: StudentCreateData
+): Promise<Student> {
+  const res = await fetchWithAuth("/api/v1/students", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+/**
+ * Get student by ID
+ */
+export async function getStudentById(
+  token: string,
+  id: number
+): Promise<Student> {
+  const res = await fetchWithAuth(`/api/v1/students/${id}`, token);
+  return res.json();
+}
+
+/**
+ * Get all students (admin)
+ */
+export async function getAllStudents(token: string): Promise<Student[]> {
+  const res = await fetchWithAuth("/api/v1/students", token);
   return res.json();
 }

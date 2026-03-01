@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/components/hooks/use-toast";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { enrollInSession } from "@/lib/api";
 
 export default function PaymentPage() {
@@ -20,6 +20,7 @@ export default function PaymentPage() {
   const { sessionId } = useParams();
   const { toast } = useToast();
   const { getToken } = useAuth();
+  const { user } = useUser();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -45,14 +46,22 @@ export default function PaymentPage() {
     setIsUploading(true);
 
     try {
-      const token = await getToken({ template: "skillmentor-auth" });
+      const token = await getToken({ template: "skill-mentor" });
       if (!token) throw new Error("Not authenticated");
 
+      // Get student info from Clerk
+      const studentEmail = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses[0]?.emailAddress || "";
+      const studentFirstName = user?.firstName || "";
+      const studentLastName = user?.lastName || "";
+
       await enrollInSession(token, {
-        mentorId: Number(mentorId),
+        mentorId: mentorId || "",  // Clerk business ID (String)
         subjectId: Number(subjectId),
         sessionAt: date,
         durationMinutes: 60,
+        studentEmail,
+        studentFirstName,
+        studentLastName,
       });
 
       toast({

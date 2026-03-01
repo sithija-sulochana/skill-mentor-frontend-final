@@ -147,7 +147,7 @@ export default function ManageBookings() {
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const token = await getToken();
+      const token = await getToken({ template: "skill-mentor" });
       const res = await fetch(`${API_BASE_URL}/api/v1/sessions`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -183,7 +183,7 @@ export default function ManageBookings() {
   ) => {
     try {
       setUpdating(sessionId);
-      const token = await getToken();
+      const token = await getToken({ template: "skill-mentor" });
 
       // Find current session to merge updates
       const currentSession = sessions.find((s) => s.id === sessionId);
@@ -250,7 +250,7 @@ export default function ManageBookings() {
   const handleDeleteSession = async (sessionId: number) => {
     try {
       setUpdating(sessionId);
-      const token = await getToken();
+      const token = await getToken({ template: "skill-mentor" });
       const res = await fetch(`${API_BASE_URL}/api/v1/sessions/${sessionId}`, {
         method: "DELETE",
         headers: {

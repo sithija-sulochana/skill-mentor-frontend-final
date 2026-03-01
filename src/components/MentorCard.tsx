@@ -46,7 +46,7 @@ export function MentorCard({ mentor }: MentorCardProps) {
     }
     setIsSchedulingModalOpen(true);
   };
-  console.log("Fetching reviews for mentor:", subjects[0]?.courseIcon);
+  console.log("Fetching reviews for mentor:", subjects[0]?.courseImageUrl);
   console.log(mentor);
 
   return (

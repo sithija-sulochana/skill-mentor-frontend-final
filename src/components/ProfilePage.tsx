@@ -495,9 +495,9 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* ================================
+        {/* 
             SUBJECTS TAUGHT SECTION
-        ================================ */}
+        */}
         {mentor.subjects && mentor.subjects.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">

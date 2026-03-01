@@ -28,6 +28,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { fi } from "date-fns/locale";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
@@ -56,6 +57,7 @@ export default function CreateMentor() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const { userId } = useAuth();
 
   const initialState: FormData = {
     firstName: "",
@@ -184,12 +186,17 @@ export default function CreateMentor() {
         },
         body: JSON.stringify({
           ...formData,
+
+          mentorId:userId,
           profileImageUrl: formData.profileImageBase64,
           experienceYears: Number(formData.experienceYears),
           startYear: Number(formData.startYear),
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
           createAt : new Date().toISOString(),
+
+          
+
 
 
         }),
