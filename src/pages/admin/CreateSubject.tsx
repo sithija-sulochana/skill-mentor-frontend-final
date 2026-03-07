@@ -28,6 +28,7 @@ interface Mentor {
   firstName: string;
   lastName: string;
   profession: string;
+  profileImageUrl?: string;
 }
 
 function CreateSubject() {

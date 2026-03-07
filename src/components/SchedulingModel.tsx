@@ -78,7 +78,7 @@ export function SchedulingModal({
 
 }: SchedulingModalProps) {
   const { getToken } = useAuth();
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { user, isSignedIn } = useUser();
   const navigate = useNavigate();
 
   // Form state
@@ -180,29 +180,29 @@ export function SchedulingModal({
 
   // Get available slots for selected date
   const availableSlots = useMemo(() => {
-    if (!date) return TIME_SLOTS;
+    if (!date) return TIME_SLOTS.map(time => ({ time, status: "available" as const }));
 
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
 
-    return TIME_SLOTS.map((time) => {
-      const [hours, minutes] = time.split(":").map(Number);
+    return TIME_SLOTS.map((slot) => {
+      const [hours, minutes] = slot.split(":").map(Number);
 
       // If today, filter out past times
       if (isToday) {
         const slotTime = new Date(date);
         slotTime.setHours(hours, minutes, 0, 0);
         if (slotTime <= now) {
-          return { time, status: "past" as const };
+          return { time: slot, status: "past" as const };
         }
       }
 
       // Check if booked
-      if (isSlotBooked(time)) {
-        return { time, status: "booked" as const };
+      if (isSlotBooked(slot)) {
+        return { time: slot, status: "booked" as const };
       }
 
-      return { time, status: "available" as const };
+      return { time: slot, status: "available" as const };
     });
   }, [date, bookedSessions, duration]);
 

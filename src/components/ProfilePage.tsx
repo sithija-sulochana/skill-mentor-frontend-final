@@ -4,7 +4,6 @@ import { useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/hooks/use-toast";
 import { uploadMentorProfileImage } from "@/lib/api";
 import {
@@ -307,7 +306,6 @@ export default function ProfilePage() {
   const fullName = `${mentor.firstName} ${mentor.lastName}`;
 
   // Calculate statistics
-  const completedSessions = sessions.filter(s => s.sessionStatus === "COMPLETED").length;
   const positiveReviewPercent = mentor.totalRatings && mentor.totalRatings > 0 
     ? Math.round((mentor.averageRating || 0) / 5 * 100) 
     : 0;
@@ -499,7 +497,7 @@ export default function ProfilePage() {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <p className="text-2xl md:text-3xl font-bold text-purple-700 dark:text-purple-300">
-                {mentor.startYear ? new Date().getFullYear() - mentor.startYear : 0}+
+                {mentor.startYear ? new Date().getFullYear() - Number(mentor.startYear) : 0}+
               </p>
               <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
                 Years Experience
@@ -661,7 +659,7 @@ export default function ProfilePage() {
                     {/* Enrollment Count */}
                     <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4">
                       <Users className="w-4 h-4" />
-                      <span>{subject.subjectEnrollment } students enrolled</span>
+                      <span>{subject.enrollmentCount ?? 0} students enrolled</span>
                     </div>
 
                     {/* Book Button */}

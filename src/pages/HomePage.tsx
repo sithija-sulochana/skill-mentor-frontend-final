@@ -11,8 +11,6 @@ import type { Mentor } from "@/types";
 import {
   Search,
   GraduationCap,
-  Users,
-  Star,
   Award,
   ArrowRight,
   Sparkles,
@@ -23,7 +21,6 @@ import {
   Filter,
   X,
   RefreshCw,
-  Briefcase,
   TrendingUp,
 } from "lucide-react";
 
