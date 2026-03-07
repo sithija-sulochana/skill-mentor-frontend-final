@@ -169,7 +169,7 @@ skillmentor-frontend/
 Frontend Deployed link - 
 <br />
 
-Swagger deployed link - http://localhost:8080/swagger-ui/index.html#/subject-controller/getSubjectById
+Swagger deployed link - https://skill-mentor-frontend-final.vercel.app/subject-controller/getSubjectById
 
 
 
