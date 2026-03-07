@@ -160,6 +160,8 @@ export default function ReviewMentorSession() {
         review: formData.review.trim(),
       };
 
+
+      
       console.log("Full Session Data:", fullSession);
 
       console.log("Submitting review:", reviewDTO);
@@ -195,6 +197,8 @@ export default function ReviewMentorSession() {
       year: "numeric",
     });
   };
+
+  
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString("en-US", {

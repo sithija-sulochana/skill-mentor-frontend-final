@@ -6,13 +6,14 @@ import {
   BookOpen,
   Video,
   CheckCircle2,
-  Loader2,
   GraduationCap,
   TrendingUp,
   ArrowRight,
   Sparkles,
   Users,
   ExternalLink,
+  AlertCircle,
+  CreditCard,
 } from "lucide-react";
 import { StatusPill } from "@/components/StatusPill";
 import { getMyEnrollments } from "@/lib/api";
@@ -53,17 +54,23 @@ export default function DashboardPage() {
     }
   }, [isLoaded, isSignedIn, getToken, user]);
 
-  // Calculate statistics
-  const upcomingSessions = enrollments.filter(
+  // Calculate statistics - only count sessions with approved payment
+  const approvedEnrollments = enrollments.filter(
+    (e) => e.paymentStatus === "APPROVED"
+  );
+  const upcomingSessions = approvedEnrollments.filter(
     (e) => e.sessionStatus === "SCHEDULED" && new Date(e.sessionAt) > new Date()
   ).length;
-  const completedSessions = enrollments.filter(
+  const completedSessions = approvedEnrollments.filter(
     (e) => e.sessionStatus === "COMPLETED"
   ).length;
-  const totalHours = enrollments.reduce(
+  const totalHours = approvedEnrollments.reduce(
     (acc, e) => acc + (e.durationMinutes || 60) / 60,
     0
   );
+  const pendingPaymentsCount = enrollments.filter(
+    (e) => e.paymentStatus === "PENDING"
+  ).length;
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -277,7 +284,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800 hover:shadow-lg transition-shadow">
             <CardContent className="pt-5 pb-5">
               <div className="flex items-center gap-4">
@@ -286,10 +293,10 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                    {enrollments.length}
+                    {approvedEnrollments.length}
                   </p>
                   <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                    Total Courses
+                    Active Courses
                   </p>
                 </div>
               </div>
@@ -349,6 +356,27 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Pending Payments Card */}
+          {pendingPaymentsCount > 0 && (
+            <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900 border-yellow-200 dark:border-yellow-800 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-yellow-500 flex items-center justify-center shrink-0">
+                    <CreditCard className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
+                      {pendingPaymentsCount}
+                    </p>
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
+                      Pending Payments
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Section Header */}
@@ -394,16 +422,21 @@ export default function DashboardPage() {
                   <div className="absolute -bottom-10 left-4">
                     <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg overflow-hidden bg-white dark:bg-slate-800">
                       {enrollment.mentorProfileImageUrl ? (
+                        <>
+                                                
+
                         <img
                           src={enrollment.mentorProfileImageUrl}
                           alt={enrollment.mentorName}
                           className="w-full h-full object-cover object-top"
                         />
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl font-bold">
                           {enrollment.mentorName.charAt(0)}
                         </div>
                       )}
+                      
                     </div>
                   </div>
 
@@ -448,7 +481,25 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Action Button */}
-                  {enrollment.meetingLink && isUpcoming ? (
+                  {!enrollment.paymentStatus ? (
+                    <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                      <AlertCircle className="w-5 h-5" />
+                      No Payment Record
+                    </div>
+                  ) : enrollment.paymentStatus === "PENDING" ? (
+                    <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 font-medium">
+                      <AlertCircle className="w-5 h-5" />
+                      Payment Pending - Awaiting Approval
+                    </div>
+                  ) : enrollment.paymentStatus === "REJECTED" ? (
+                    <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 font-medium">
+                      <AlertCircle className="w-5 h-5" />
+                      Payment Rejected
+                    </div>
+                  ) : enrollment.meetingLink  ? (
+
+                    <>
+                    {console.log("Meeting Link:", enrollment.meetingLink)}
                     <a
                       href={enrollment.meetingLink}
                       target="_blank"
@@ -460,17 +511,26 @@ export default function DashboardPage() {
                         <ExternalLink className="w-4 h-4 ml-2" />
                       </Button>
                     </a>
+                    </>
                   ) : enrollment.sessionStatus === "COMPLETED" ? (
                     <div className="flex items-center justify-center gap-2 py-2 text-green-600 dark:text-green-400 font-medium">
                       <CheckCircle2 className="w-5 h-5" />
                       Session Completed
+                      
                     </div>
+                      
+                    
+
                   ) : (
+                    <>
+                    {console.log("Awaiting session link:", enrollment.meetingLink)}
                     <Button variant="outline" className="w-full" disabled>
                       <Clock className="w-4 h-4 mr-2" />
                       Awaiting Session Link
                     </Button>
-                  )}
+
+                    </>
+                  ) }
                 </CardContent>
               </Card>
             );

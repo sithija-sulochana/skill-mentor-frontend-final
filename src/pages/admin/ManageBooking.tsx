@@ -232,7 +232,7 @@ export default function ManageBookings() {
           meetingLink: updates.meetingLink !== undefined ? updates.meetingLink : fullSession.meetingLink,
         }),
       });
-      console.log("Full session IDs:", fullSession.student?.id, fullSession.mentor?.id, fullSession.subject?.id);
+      console.log(fullSession)
 
       // console.log("Current Session:", currentSession);
       if (!res.ok) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { Calendar } from "./ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,9 @@ export function SchedulingModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // Ref to prevent double submissions (synchronous check)
+  const isSubmittingRef = useRef(false);
+
   // Booked sessions for conflict checking
   const [bookedSessions, setBookedSessions] = useState<BookedSession[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -115,7 +118,8 @@ export function SchedulingModal({
       setError(null);
       setSuccess(false);
       setBookedSessions([]);
-
+      setLoading(false);
+      isSubmittingRef.current = false;
     }
   }, [isOpen]);
 
@@ -204,16 +208,22 @@ export function SchedulingModal({
 
   // Handle scheduling
   const handleSchedule = async () => {
-      if (loading) return; 
+    // Synchronous check using ref to prevent double submissions
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
+    setLoading(true);
 
-  setLoading(true);
     if (!date || !selectedTime || !selectedSubject) {
       setError("Please select a date, time, and subject");
+      setLoading(false);
+      isSubmittingRef.current = false;
       return;
     }
 
     if (!isSignedIn) {
       setError("Please sign in to schedule a session");
+      setLoading(false);
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -225,11 +235,12 @@ export function SchedulingModal({
     // Check if the slot is in the past
     if (sessionDateTime <= new Date()) {
       setError("Cannot schedule a session in the past");
+      setLoading(false);
+      isSubmittingRef.current = false;
       return;
     }
 
     try {
-      setLoading(true);
       setError(null);
 
       // Force a fresh token to avoid expiration issues
@@ -305,6 +316,7 @@ export function SchedulingModal({
       }
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -581,7 +593,7 @@ export function SchedulingModal({
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={onClose} disabled={loading}>
+              <Button variant="outline"  disabled={loading}>
                 Cancel
               </Button>
               <Button

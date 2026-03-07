@@ -27,7 +27,7 @@ interface NavLink {
 const navLinks: NavLink[] = [
   { to: "/", label: "Tutors", icon: Users },
   { to: "/aboutus", label: "About Us", icon: BookOpen },
-  { to: "/", label: "Resources", icon: Home },
+  { to: "/review", label: "Review", icon: Home },
   { to: "/admin", label: "Admin", icon: Shield },
 ];
 

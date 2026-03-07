@@ -27,6 +27,123 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+// Animation styles
+const animationStyles = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-20px) rotate(5deg);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(59, 130, 246, 0.8), 0 0 60px rgba(139, 92, 246, 0.4);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-scale {
+    animation: fadeInScale 0.6s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .delay-100 { animation-delay: 0.1s; }
+  .delay-200 { animation-delay: 0.2s; }
+  .delay-300 { animation-delay: 0.3s; }
+  .delay-400 { animation-delay: 0.4s; }
+  .delay-500 { animation-delay: 0.5s; }
+  .delay-600 { animation-delay: 0.6s; }
+  .delay-700 { animation-delay: 0.7s; }
+  .delay-800 { animation-delay: 0.8s; }
+`;
+
 export default function HomePage() {
   const { isSignedIn } = useAuth();
   const [mentors, setMentors] = useState<Mentor[]>([]);
@@ -99,6 +216,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+      {/* Inject Animation Styles */}
+      <style>{animationStyles}</style>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background Gradient */}
@@ -109,51 +229,63 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,white_1px,transparent_1px)] bg-[size:24px_24px]" />
         </div>
 
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+        {/* Floating Elements - Animated */}
+        <div className="absolute top-20 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-float delay-300" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-40 right-20 w-32 h-32 bg-cyan-400/20 rounded-full blur-2xl animate-float" style={{ animationDelay: "0.8s" }} />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="text-center">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm mb-8">
+            {/* Badge - Animated */}
+            <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm mb-8">
               <Sparkles className="w-4 h-4" />
               <span>Trusted by thousands of learners worldwide</span>
             </div>
 
-            {/* Main Heading */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight">
+            {/* Main Heading - Animated */}
+            <h1 className="animate-fade-in-up delay-200 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight">
               Find Your Perfect
               <span className="block mt-2 bg-gradient-to-r from-yellow-200 via-pink-200 to-cyan-200 bg-clip-text text-transparent">
                 SkillMentor
               </span>
             </h1>
 
-            {/* Subheading */}
-            <p className="text-lg sm:text-xl text-blue-100 max-w-2xl mx-auto mb-10">
+            {/* Subheading - Animated */}
+            <p className="animate-fade-in-up delay-300 text-lg sm:text-xl text-blue-100 max-w-2xl mx-auto mb-10">
               Empower your career with personalized 1-on-1 mentorship from
               industry experts. Master AWS, ace interviews, and unlock your
               potential.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            {/* CTA Buttons - Animated */}
+            <div className="animate-fade-in-up delay-400 flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               {isSignedIn ? (
-                <Link to="/dashboard">
-                  <Button
-                    size="lg"
-                    className="bg-white text-blue-600 hover:bg-blue-50 shadow-xl shadow-blue-900/20 text-lg px-8 py-6"
-                  >
-                    Go to Dashboard
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </Link>
+                <>
+                  <Link to="/dashboard">
+                    <Button
+                      size="lg"
+                      className="bg-white text-blue-600 hover:bg-blue-50 shadow-xl shadow-blue-900/20 text-lg px-8 py-6 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                    >
+                      Go to Dashboard
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </Link>
+                  {/* <Link to="/chess">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="border-white/30 text-black bg-white hover:bg-white/10 text-lg px-8 py-6 transition-all duration-300 hover:scale-105"
+                    >
+                      ♟️ Play Chess with mentors
+                    </Button>
+                  </Link> */}
+                </>
               ) : (
                 <>
                   <Link to="/login">
                     <Button
                       size="lg"
-                      className="bg-white text-blue-600 hover:bg-blue-50 shadow-xl shadow-blue-900/20 text-lg px-8 py-6"
+                      className="bg-white text-blue-600 hover:bg-blue-50 shadow-xl shadow-blue-900/20 text-lg px-8 py-6 transition-all duration-300 hover:scale-105 hover:shadow-2xl animate-pulse-glow"
                     >
                       Get Started Free
                       <ArrowRight className="w-5 h-5 ml-2" />
@@ -162,7 +294,7 @@ export default function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-white/30 text-white hover:bg-white/10 text-lg px-8 py-6"
+                    className="border-white/30 text-white hover:bg-white/10 text-lg px-8 py-6 transition-all duration-300 hover:scale-105"
                     onClick={() =>
                       document
                         .getElementById("mentors")
@@ -171,27 +303,36 @@ export default function HomePage() {
                   >
                     Browse Mentors
                   </Button>
+                  <Link to="/chess">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="border-white/30 text-white hover:bg-white/10 text-lg px-8 py-6 transition-all duration-300 hover:scale-105"
+                    >
+                      ♟️ Play Chess
+                    </Button>
+                  </Link>
                 </>
               )}
             </div>
 
-            {/* Stats Row */}
+            {/* Stats Row - Staggered Animation */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+              <div className="animate-fade-in-scale delay-500 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                 <p className="text-3xl font-bold text-white">{totalMentors}+</p>
                 <p className="text-blue-200 text-sm">Expert Mentors</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+              <div className="animate-fade-in-scale delay-600 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                 <p className="text-3xl font-bold text-white">{totalSubjects}+</p>
                 <p className="text-blue-200 text-sm">Subjects</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+              <div className="animate-fade-in-scale delay-700 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                 <p className="text-3xl font-bold text-white">
                   {totalEnrollments}+
                 </p>
                 <p className="text-blue-200 text-sm">Students Taught</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+              <div className="animate-fade-in-scale delay-800 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                 <p className="text-3xl font-bold text-white">
                   {certifiedMentors}
                 </p>
@@ -221,19 +362,19 @@ export default function HomePage() {
       <section className="py-16 bg-slate-50 dark:bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+            <h2 className="animate-slide-in-left text-3xl font-bold text-slate-900 dark:text-white mb-4">
               Why Choose SkillMentor?
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+            <p className="animate-slide-in-right text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
               We connect you with industry experts who are passionate about
               helping you succeed in your career journey.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-lg transition-shadow">
+            <Card className="animate-fade-in-up delay-100 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 group">
               <CardContent className="pt-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <Video className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
@@ -245,9 +386,9 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-lg transition-shadow">
+            <Card className="animate-fade-in-up delay-200 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 group">
               <CardContent className="pt-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <Award className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
@@ -259,9 +400,9 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-lg transition-shadow">
+            <Card className="animate-fade-in-up delay-300 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 group">
               <CardContent className="pt-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <Clock className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
@@ -273,9 +414,9 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-lg transition-shadow">
+            <Card className="animate-fade-in-up delay-400 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 group">
               <CardContent className="pt-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <TrendingUp className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-2">

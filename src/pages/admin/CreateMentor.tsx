@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { fi } from "date-fns/locale";
+import { uploadMentorProfileImage } from "@/lib/api";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
@@ -46,6 +46,7 @@ interface FormData {
   profileImageBase64: string;
   startYear: string;
   isCertified: boolean;
+  createAt?: string;
 }
 
 interface FormErrors {
@@ -56,7 +57,9 @@ export default function CreateMentor() {
   const { getToken } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const { userId } = useAuth();
 
   const initialState: FormData = {
@@ -100,6 +103,10 @@ export default function CreateMentor() {
       return;
     }
 
+    // Store the file for later upload
+    setSelectedImageFile(file);
+
+    // Also create base64 preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormData((prev) => ({
@@ -108,6 +115,11 @@ export default function CreateMentor() {
       }));
     };
     reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setSelectedImageFile(null);
+    setFormData(prev => ({ ...prev, profileImageBase64: "" }));
   };
 
 
@@ -178,6 +190,7 @@ export default function CreateMentor() {
       const token = await getToken({ template: "skill-mentor" });
       if (!token) throw new Error("Authentication required");
 
+      // First, create the mentor without the image (or with base64 fallback)
       const response = await fetch(`${API_BASE_URL}/api/v1/mentors`, {
         method: "POST",
         headers: {
@@ -186,19 +199,14 @@ export default function CreateMentor() {
         },
         body: JSON.stringify({
           ...formData,
-
-          mentorId:userId,
+          mentorId: userId,
+          // Use base64 as initial profile image (fallback)
           profileImageUrl: formData.profileImageBase64,
           experienceYears: Number(formData.experienceYears),
           startYear: Number(formData.startYear),
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
-          createAt : new Date().toISOString(),
-
-          
-
-
-
+          createAt: new Date().toISOString(),
         }),
       });
 
@@ -207,12 +215,36 @@ export default function CreateMentor() {
         throw new Error(errorText || "Failed to create mentor");
       }
 
-      toast({
-        title: "Success",
-        description: "Mentor created successfully",
-      });
+      const createdMentor = await response.json();
+
+      // If we have a selected file and the mentor was created, upload the image separately
+      if (selectedImageFile && createdMentor.id) {
+        setIsUploadingImage(true);
+        try {
+          await uploadMentorProfileImage(token, createdMentor.id, selectedImageFile);
+          toast({
+            title: "Success",
+            description: "Mentor created and profile image uploaded successfully",
+          });
+        } catch (uploadError) {
+          console.error("Image upload failed:", uploadError);
+          toast({
+            title: "Partial Success",
+            description: "Mentor created but image upload failed. You can update the image later.",
+            variant: "default",
+          });
+        } finally {
+          setIsUploadingImage(false);
+        }
+      } else {
+        toast({
+          title: "Success",
+          description: "Mentor created successfully",
+        });
+      }
 
       setFormData(initialState);
+      setSelectedImageFile(null);
       setErrors({});
     } catch (error) {
       toast({
@@ -621,7 +653,7 @@ export default function CreateMentor() {
                   {formData.profileImageBase64 && (
                     <button
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, profileImageBase64: "" }))}
+                      onClick={clearImage}
                       className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
                     >
                       <X className="w-4 h-4" />
@@ -676,6 +708,7 @@ export default function CreateMentor() {
                   startYear: "",
                   isCertified: false,
                 });
+                setSelectedImageFile(null);
                 setErrors({});
               }}
             >
@@ -683,13 +716,13 @@ export default function CreateMentor() {
             </Button>
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isUploadingImage}
               className="h-12 px-8 text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 order-1 sm:order-2"
             >
-              {isLoading ? (
+              {isLoading || isUploadingImage ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Creating Mentor...
+                  {isUploadingImage ? "Uploading Image..." : "Creating Mentor..."}
                 </>
               ) : (
                 <>

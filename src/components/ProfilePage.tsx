@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router";
 import { useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/components/hooks/use-toast";
+import { uploadMentorProfileImage } from "@/lib/api";
 import {
   Mail,
   Phone,
@@ -26,6 +28,7 @@ import {
   GraduationCap,
   ThumbsUp,
   Sparkles,
+  Camera,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -74,16 +77,32 @@ interface Session {
   subject?: Subject;
 }
 
+interface Review {
+  id: number;
+  rating: number;
+  review: string;
+  createdAt: string;
+  studentName?: string;
+  studentProfileImageUrl?: string;
+  subjectName?: string;
+}
 
 
 export default function ProfilePage() {
   const { mentorId } = useParams();
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
+  const { toast } = useToast();
 
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if current user is the mentor (can edit profile)
+  const isOwnProfile = userId && mentor?.mentorId === userId;
 
 
 
@@ -123,6 +142,16 @@ export default function ProfilePage() {
         const sessionData: Session[] = await sessionRes.json();
         setSessions(sessionData);
       }
+
+      // Fetch Reviews for this mentor
+      const reviewsRes = await fetch(
+        `${API_BASE_URL}/api/v1/reviews/mentor/${mentorData.id}`
+      );
+
+      if (reviewsRes.ok) {
+        const reviewsData: Review[] = await reviewsRes.json();
+        setReviews(reviewsData);
+      }
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -131,6 +160,60 @@ export default function ProfilePage() {
     }
   };
 
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !mentor) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload a valid image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Image must be under 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      const token = await getToken({ template: "skill-mentor" });
+      if (!token) throw new Error("Authentication required");
+
+      const result = await uploadMentorProfileImage(token, mentor.id, file);
+      
+      // Update local mentor state with new image URL
+      setMentor(prev => prev ? { ...prev, profileImageUrl: result.profileImageUrl } : null);
+
+      toast({
+        title: "Success",
+        description: "Profile picture updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to upload profile image:", error);
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingImage(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
 
   const formatDate = (isoString: string) => {
@@ -175,9 +258,7 @@ export default function ProfilePage() {
     return configs[status] || configs.SCHEDULED;
   };
 
-  /* ============================
-     Loading State
-  ============================ */
+// Loading state
 
   if (loading) {
     return (
@@ -192,9 +273,7 @@ export default function ProfilePage() {
     );
   }
 
-  /* ============================
-     Error State
-  ============================ */
+// Error state
 
   if (error || !mentor) {
     return (
@@ -257,16 +336,20 @@ export default function ProfilePage() {
           </Link>
         </div>
 
-        {/* ================================
+        {/* 
             HEADER SECTION
-        ================================ */}
+         */}
         <div className="relative -mt-24 md:-mt-28 pb-8">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Profile Image */}
             <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-6">
-              <div className="relative">
+              <div className="relative group">
                 <div className="w-36 h-36 md:w-44 md:h-44 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-900 shadow-2xl bg-white dark:bg-slate-800">
-                  {mentor.profileImageUrl ? (
+                  {isUploadingImage ? (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                    </div>
+                  ) : mentor.profileImageUrl ? (
                     <img
                       src={mentor.profileImageUrl}
                       alt={fullName}
@@ -279,6 +362,29 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
+                
+                {/* Edit Profile Image Button - Only visible for mentor's own profile */}
+                {isOwnProfile && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProfileImageUpload}
+                      disabled={isUploadingImage}
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Change profile picture"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+                
                 {mentor.isCertified && (
                   <div className="absolute -bottom-2 -right-2 bg-green-500 text-white p-2.5 rounded-full shadow-lg ring-4 ring-white dark:ring-slate-900">
                     <Award className="w-5 h-5" />
@@ -564,6 +670,103 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+        {/* ================================
+            REVIEWS SECTION
+        ================================ */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-500" />
+              Student Reviews
+            </h2>
+            <Badge variant="outline">
+              {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+            </Badge>
+          </div>
+
+          {reviews.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <Star className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-500 dark:text-slate-400">
+                    No reviews yet. Be the first to review {mentor.firstName}!
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <Card key={review.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-4">
+                      {/* Reviewer Avatar */}
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shrink-0">
+                        {review.studentProfileImageUrl ? (
+                          <img
+                            src={review.studentProfileImageUrl}
+                            alt={review.studentName || "Student"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span>{review.studentName?.charAt(0) || "S"}</span>
+                        )}
+                      </div>
+
+                      {/* Review Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <h4 className="font-semibold text-slate-900 dark:text-white">
+                            {review.studentName || "Anonymous Student"}
+                          </h4>
+                          {review.subjectName && (
+                            <Badge variant="secondary" className="text-xs">
+                              <BookOpen className="w-3 h-3 mr-1" />
+                              {review.subjectName}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Star Rating */}
+                        <div className="flex items-center gap-1 mb-3">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${
+                                star <= review.rating
+                                  ? "text-amber-400 fill-amber-400"
+                                  : "text-slate-300 dark:text-slate-600"
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">
+                            {review.rating.toFixed(1)}
+                          </span>
+                        </div>
+
+                        {/* Review Text */}
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {review.review}
+                        </p>
+
+                        {/* Date */}
+                        <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                          {new Date(review.createdAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* ================================
             CONTACT & SESSIONS GRID

@@ -13,6 +13,8 @@ import CreateMentor from "@/pages/admin/CreateMentor";
 import ManageBooking from "@/pages/admin/ManageBooking";
 import AboutUs from "@/pages/AboutUs";
 import ReviewMentorSession from "./pages/ReviewMentorSession";
+import ChessGame from "@/pages/ChessGame";
+
 
 function App() {
   return (
@@ -37,6 +39,8 @@ function App() {
           <Route path="mentors/:mentorId" element={<ProfilePage />} />
           <Route path="/aboutus" element={<AboutUs />} />
           <Route path="/review" element={<ReviewMentorSession />} />
+          <Route path="/chess" element={<ChessGame />} />
+         
           <Route
             path="/dashboard"
             element={
