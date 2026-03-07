@@ -36,6 +36,8 @@ export function MentorCard({ mentor }: MentorCardProps) {
   const hasSubjects = subjects.length > 0;
   const courseTitle = subjects[0]?.subjectName ?? "No Subject";
   const courseImage = subjects[0]?.courseImageUrl ?? "";
+
+  console.log("MentorCard Rendered:", { mentor, subjects, courseTitle, courseImage });
   const bio = mentor.bio ?? "";
   const bioTooLong = bio.length > 120;
 

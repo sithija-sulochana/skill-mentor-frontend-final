@@ -323,11 +323,11 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
       {/* Cover Image */}
-      <div className="relative h-56 md:h-72 lg:h-80 w-full overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-r from-blue-600 via-purple-600 to-indigo-600" />
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557821552-17105176677c?w=1200&h=400&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-30" />
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent" />
-      </div>
+     <div className="relative h-56 md:h-72 lg:h-80 w-full overflow-hidden">
+  <div
+    className="absolute inset-0 bg-[url('https://as1.ftcdn.net/v2/jpg/18/66/65/86/1000_F_1866658690_GZz6ps4izGwLXZ5U1336uhZcNUtwi6bF.jpg')] bg-cover bg-center blur-1.5xl opacity-30"
+  />
+</div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Navigation */}
