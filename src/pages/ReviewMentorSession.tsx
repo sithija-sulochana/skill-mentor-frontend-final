@@ -28,6 +28,7 @@ import { getMyEnrollments } from "@/lib/api";
 import type { Enrollment } from "@/types";
 
 interface ReviewFormData {
+  studentId?: number;
   mentorId: string;
   sessionId: string;
   rating: number;
@@ -46,6 +47,7 @@ export default function ReviewMentorSession() {
   const [hoveredRating, setHoveredRating] = useState(0);
 
   const [formData, setFormData] = useState<ReviewFormData>({
+    studentId: undefined,
     mentorId: "",
     sessionId: "",
     rating: 0,
@@ -151,6 +153,7 @@ export default function ReviewMentorSession() {
       }
 
       const fullSession = await sessionRes.json();
+      console.log("Fetched full session details:", fullSession);
 
       const reviewDTO = {
         studentId: fullSession.student?.id,

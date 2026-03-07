@@ -79,6 +79,9 @@ interface Session {
 
 interface Review {
   id: number;
+  studentId?: number;
+  mentorId: number;
+  sessionId: number;
   rating: number;
   review: string;
   createdAt: string;
@@ -147,6 +150,8 @@ export default function ProfilePage() {
       const reviewsRes = await fetch(
         `${API_BASE_URL}/api/v1/reviews/mentor/${mentorData.id}`
       );
+
+      console.log("Fetched reviews response:", reviewsRes);
 
       if (reviewsRes.ok) {
         const reviewsData: Review[] = await reviewsRes.json();

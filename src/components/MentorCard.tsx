@@ -93,7 +93,7 @@ export function MentorCard({ mentor }: MentorCardProps) {
           )}
 
           {/* Mentor Avatar */}
-          <div className="absolute -bottom-10 left-4">
+          <div className="absolute -bottom-10 left-4 relative mt-1.5 z-10">
             <div
               className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-800 cursor-pointer transform transition-transform hover:scale-105"
               onClick={handleViewProfile}
@@ -102,7 +102,7 @@ export function MentorCard({ mentor }: MentorCardProps) {
                 <img
                   src={mentor.profileImageUrl}
                   alt={mentorName}
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-cover object-top rounded-2xl"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-blue-500 to-purple-600 text-white text-2xl font-bold">
