@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { Calendar } from "./ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,6 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import type { Mentor, Subject } from "@/types";
-import { enrollInSession } from "@/lib/api";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
@@ -77,8 +76,7 @@ export function SchedulingModal({
   mentor,
 
 }: SchedulingModalProps) {
-  const { getToken } = useAuth();
-  const { user, isSignedIn } = useUser();
+  const { isSignedIn } = useUser();
   const navigate = useNavigate();
 
   // Form state
@@ -157,7 +155,6 @@ export function SchedulingModal({
     fetchBookedSessions();
   }, [date, mentor.id]);
 
-  console.log(user?.id)
   // Check if a time slot conflicts with existing bookings
   const isSlotBooked = (time: string): boolean => {
     if (!date || bookedSessions.length === 0) return false;
@@ -242,78 +239,28 @@ export function SchedulingModal({
 
     try {
       setError(null);
-
-      // Force a fresh token to avoid expiration issues
-      const token = await getToken({ template: "skill-mentor", skipCache: true });
-      if (!token) {
-        setError("Authentication failed. Please sign in again.");
-        return;
-      }
-
-      console.log("mentor id " + mentor.id)
-      // Call the enrollment API - backend gets student info from JWT token
-      const enrollmentData = {
-        mentorId: mentor.id,  // Database ID (Long)
-        subjectId: selectedSubject.id,
-        sessionAt: sessionDateTime.toISOString(),
-        durationMinutes: duration,
-      };
-      console.log("Enrollment request data:", enrollmentData);
-      const enrollment = await enrollInSession(token, enrollmentData);
-
-
       setSuccess(true);
 
       // Redirect to payment page after short delay
+      // Session will be created after successful payment
       setTimeout(() => {
         const searchParams = new URLSearchParams({
           date: sessionDateTime.toISOString(),
           courseTitle: selectedSubject.subjectName,
           mentorName: mentorName,
-          mentorId: String(mentor.id),  // Database ID
+          mentorId: String(mentor.id),
           mentorImg: mentor.profileImageUrl ?? "",
           subjectId: String(selectedSubject.id),
           duration: String(duration),
         });
-        navigate(`/payment/${enrollment.id}?${searchParams.toString()}`);
+        navigate(`/payment?${searchParams.toString()}`);
         onClose();
       }, 1500);
     } catch (err) {
       console.error("Scheduling error:", err);
-
-      // Handle conflict errors
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to schedule session";
-
-      if (
-        errorMessage.toLowerCase().includes("conflict") ||
-        errorMessage.toLowerCase().includes("already booked") ||
-        errorMessage.toLowerCase().includes("not available") ||
-        errorMessage.toLowerCase().includes("overlapping")
-      ) {
-        setError(
-          `Scheduling conflict: ${errorMessage}. Please select a different time slot.`
-        );
-        // Refresh booked sessions to get updated availability
-        if (date) {
-          const res = await fetch(
-            `${API_BASE_URL}/api/v1/sessions/mentor/${mentor.id}`
-          );
-          if (res.ok) {
-            const sessions = await res.json();
-            const selectedDateStr = date.toISOString().split("T")[0];
-            const dayBookings = sessions.filter((s: { sessionAt: string }) => {
-              const sessionDate = new Date(s.sessionAt)
-                .toISOString()
-                .split("T")[0];
-              return sessionDate === selectedDateStr;
-            });
-            setBookedSessions(dayBookings);
-          }
-        }
-      } else {
-        setError(errorMessage);
-      }
+        err instanceof Error ? err.message : "Failed to process scheduling";
+      setError(errorMessage);
     } finally {
       setLoading(false);
       isSubmittingRef.current = false;

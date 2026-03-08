@@ -70,9 +70,30 @@ import {
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
 
-// Session type matching backend Session entity
+// Session type matching backend SessionResponseDTO (flat structure)
 interface Session {
   id: number;
+  // Flat student fields
+  studentId?: number;
+  studentName?: string;
+  studentEmail?: string;
+  // Flat mentor fields
+  mentorId?: number;
+  mentorName?: string;
+  mentorEmail?: string;
+  mentorProfileImageUrl?: string;
+  // Flat subject fields
+  subjectId?: number;
+  subjectName?: string;
+  // Session fields
+  sessionAt: string;
+  durationMinutes: number;
+  sessionStatus: "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
+  paymentStatus: "PENDING" | "CONFIRMED" | "COMPLETED" | "REFUNDED";
+  meetingLink?: string;
+  notes?: string;
+  createdAt?: string;
+  // Nested objects (used when fetching single session)
   student?: {
     id: number;
     firstName: string;
@@ -91,13 +112,6 @@ interface Session {
     subjectName: string;
     description?: string;
   };
-  sessionAt: string;
-  durationMinutes: number;
-  sessionStatus: "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
-  paymentStatus: "PENDING" | "CONFIRMED" | "COMPLETED" | "REFUNDED";
-  meetingLink?: string;
-  notes?: string;
-  createdAt?: string;
 }
 
 type SortField =
@@ -332,10 +346,13 @@ export default function ManageBookings() {
       const term = searchTerm.toLowerCase();
       result = result.filter(
         (session) =>
+          session.studentName?.toLowerCase().includes(term) ||
           session.student?.firstName?.toLowerCase().includes(term) ||
           session.student?.lastName?.toLowerCase().includes(term) ||
+          session.mentorName?.toLowerCase().includes(term) ||
           session.mentor?.firstName?.toLowerCase().includes(term) ||
           session.mentor?.lastName?.toLowerCase().includes(term) ||
+          session.subjectName?.toLowerCase().includes(term) ||
           session.subject?.subjectName?.toLowerCase().includes(term) ||
           session.id.toString().includes(term)
       );
@@ -382,16 +399,16 @@ export default function ManageBookings() {
           bVal = new Date(b.sessionAt).getTime();
           break;
         case "studentName":
-          aVal = `${a.student?.firstName || ""} ${a.student?.lastName || ""}`.toLowerCase();
-          bVal = `${b.student?.firstName || ""} ${b.student?.lastName || ""}`.toLowerCase();
+          aVal = (a.studentName || `${a.student?.firstName || ""} ${a.student?.lastName || ""}`).toLowerCase();
+          bVal = (b.studentName || `${b.student?.firstName || ""} ${b.student?.lastName || ""}`).toLowerCase();
           break;
         case "mentorName":
-          aVal = `${a.mentor?.firstName || ""} ${a.mentor?.lastName || ""}`.toLowerCase();
-          bVal = `${b.mentor?.firstName || ""} ${b.mentor?.lastName || ""}`.toLowerCase();
+          aVal = (a.mentorName || `${a.mentor?.firstName || ""} ${a.mentor?.lastName || ""}`).toLowerCase();
+          bVal = (b.mentorName || `${b.mentor?.firstName || ""} ${b.mentor?.lastName || ""}`).toLowerCase();
           break;
         case "subjectName":
-          aVal = (a.subject?.subjectName || "").toLowerCase();
-          bVal = (b.subject?.subjectName || "").toLowerCase();
+          aVal = (a.subjectName || a.subject?.subjectName || "").toLowerCase();
+          bVal = (b.subjectName || b.subject?.subjectName || "").toLowerCase();
           break;
         case "durationMinutes":
           aVal = a.durationMinutes;
@@ -868,17 +885,20 @@ export default function ManageBookings() {
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-                                  {session.student?.firstName?.charAt(0) || "S"}
-                                  {session.student?.lastName?.charAt(0) || ""}
+                                  {(session.studentName || session.student?.firstName || "S").charAt(0)}
+                                  {(session.student?.lastName || "").charAt(0)}
                                 </div>
                                 <div className="min-w-0">
                                   <p className="font-medium text-slate-900 dark:text-white truncate">
-                                    {session.student
+                                    {session.studentName || (session.student
                                       ? `${session.student.firstName} ${session.student.lastName}`
-                                      : "Unknown Student"}
+                                      : "Unknown Student")}
+                                    <span className="ml-1 text-xs text-slate-400 font-mono">
+                                      (#{session.studentId || session.student?.id || "-"})
+                                    </span>
                                   </p>
                                   <p className="text-xs text-slate-500 truncate">
-                                    {session.student?.email || "-"}
+                                    {session.studentEmail || session.student?.email || "-"}
                                   </p>
                                 </div>
                               </div>
@@ -887,26 +907,29 @@ export default function ManageBookings() {
                             {/* Mentor */}
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                {session.mentor?.profileImageUrl ? (
+                                {(session.mentorProfileImageUrl || session.mentor?.profileImageUrl) ? (
                                   <img
-                                    src={session.mentor.profileImageUrl}
+                                    src={session.mentorProfileImageUrl || session.mentor?.profileImageUrl}
                                     alt=""
                                     className="w-8 h-8 rounded-full object-cover"
                                   />
                                 ) : (
                                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold">
-                                    {session.mentor?.firstName?.charAt(0) || "M"}
-                                    {session.mentor?.lastName?.charAt(0) || ""}
+                                    {(session.mentorName || session.mentor?.firstName || "M").charAt(0)}
+                                    {(session.mentor?.lastName || "").charAt(0)}
                                   </div>
                                 )}
                                 <div className="min-w-0">
                                   <p className="font-medium text-slate-900 dark:text-white truncate">
-                                    {session.mentor
+                                    {session.mentorName || (session.mentor
                                       ? `${session.mentor.firstName} ${session.mentor.lastName}`
-                                      : "Unknown Mentor"}
+                                      : "Unknown Mentor")}
+                                    <span className="ml-1 text-xs text-slate-400 font-mono">
+                                      (#{session.mentorId || session.mentor?.id || "-"})
+                                    </span>
                                   </p>
                                   <p className="text-xs text-slate-500 truncate">
-                                    {session.mentor?.email || "-"}
+                                    {session.mentorEmail || session.mentor?.email || "-"}
                                   </p>
                                 </div>
                               </div>
@@ -914,9 +937,14 @@ export default function ManageBookings() {
 
                             {/* Subject */}
                             <TableCell>
-                              <Badge variant="outline" className="font-medium">
-                                {session.subject?.subjectName || "Unknown Subject"}
-                              </Badge>
+                              <div className="space-y-1">
+                                <Badge variant="outline" className="font-medium">
+                                  {session.subjectName || session.subject?.subjectName || "Unknown Subject"}
+                                </Badge>
+                                <p className="text-xs text-slate-400 font-mono">
+                                  ID: #{session.subjectId || session.subject?.id || "-"}
+                                </p>
+                              </div>
                             </TableCell>
 
                             {/* Date/Time */}
