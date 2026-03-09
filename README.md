@@ -170,6 +170,7 @@ Frontend Deployed link - https://skill-mentor-frontend-final.vercel.app/
 <br />
 
 Swagger deployed link - 
+Backend Repo URL - https://github.com/sithija-sulochana/skill-mentor-server
 
 
 
