@@ -166,10 +166,10 @@ skillmentor-frontend/
 
 # Deployed Link
 
-Frontend Deployed link - 
+Frontend Deployed link - https://skill-mentor-frontend-final.vercel.app/
 <br />
 
-Swagger deployed link - https://skill-mentor-frontend-final.vercel.app/
+Swagger deployed link - 
 
 
 
