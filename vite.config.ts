@@ -8,6 +8,13 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 3001,
+    proxy: {
+      '/api': {
+        target: 'https://skill-mentor-server-n1ff.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
   base: "./",
   resolve: {
