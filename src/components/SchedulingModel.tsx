@@ -34,8 +34,7 @@ import {
 import { useNavigate } from "react-router";
 import type { Mentor, Subject } from "@/types";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface SchedulingModalProps {
   isOpen: boolean;

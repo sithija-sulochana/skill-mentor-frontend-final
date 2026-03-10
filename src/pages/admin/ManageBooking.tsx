@@ -67,8 +67,7 @@ import {
   BookOpen,
 } from "lucide-react";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Session type matching backend SessionResponseDTO (flat structure)
 interface Session {
