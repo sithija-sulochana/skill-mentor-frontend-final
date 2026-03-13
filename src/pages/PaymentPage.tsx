@@ -98,7 +98,7 @@ const ImageIcon = () => (
 export default function PaymentPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { sessionId } = useParams();
+  const { sessionId: paymentId } = useParams();
   const { toast } = useToast();
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -124,13 +124,13 @@ export default function PaymentPage() {
 
   useEffect(() => {
     async function fetchPayment() {
-      if (!sessionId) return;
+      if (!paymentId) return;
       setIsLoading(true);
       try {
         const token = await getToken({ template: "skill-mentor" });
         if (!token) throw new Error("Not authenticated");
 
-        const data = await getPaymentById(token, Number(sessionId));
+        const data = await getPaymentById(token, Number(paymentId));
         setPayment(data);
       } catch {
         console.log("No existing payment found");
@@ -139,7 +139,7 @@ export default function PaymentPage() {
       }
     }
     fetchPayment();
-  }, [sessionId, getToken]);
+  }, [paymentId, getToken]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     if (e.target.files && e.target.files[0]) {
@@ -195,7 +195,7 @@ export default function PaymentPage() {
       const paymentToken = await getToken({ template: "skill-mentor", skipCache: true });
       if (!paymentToken) throw new Error("Not authenticated");
 
-      await createPayment(paymentToken, {
+      const createdPayment = await createPayment(paymentToken, {
         studentId: studentDbId,
         sessionId: enrollment.id,
         receipt_url: receiptUrl,
@@ -208,8 +208,9 @@ export default function PaymentPage() {
           "Your bank slip has been uploaded. Please wait for admin approval.",
       });
 
+      // Navigate to payment status page to show pending status
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate(`/payment/${createdPayment.id}`);
       }, 2000);
     } catch (error) {
       console.error("Payment error:", error);

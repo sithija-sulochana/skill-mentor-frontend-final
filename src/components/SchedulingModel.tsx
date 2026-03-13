@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { Calendar } from "./ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +76,7 @@ export function SchedulingModal({
 
 }: SchedulingModalProps) {
   const { isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const navigate = useNavigate();
 
   // Form state
@@ -127,13 +128,26 @@ export function SchedulingModal({
 
       try {
         setLoadingSlots(true);
+        const token = await getToken({ template: "skill-mentor" });
+        if (!token) return;
+
         // Fetch sessions for this mentor to check availability
         const res = await fetch(
-          `${API_BASE_URL}/api/v1/sessions/mentor/${mentor.id}`
+          `${API_BASE_URL}/api/v1/sessions/mentors/${mentor.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
         if (res.ok) {
-          const sessions = await res.json();
+          const raw = await res.json();
+          const sessions = Array.isArray(raw)
+            ? raw
+            : Array.isArray(raw?.data)
+              ? raw.data
+              : [];
           // Filter sessions for the selected date
           const selectedDateStr = date.toISOString().split("T")[0];
           const dayBookings = sessions.filter((s: { sessionAt: string }) => {
@@ -152,7 +166,7 @@ export function SchedulingModal({
     };
 
     fetchBookedSessions();
-  }, [date, mentor.id]);
+  }, [date, mentor.id, getToken]);
 
   // Check if a time slot conflicts with existing bookings
   const isSlotBooked = (time: string): boolean => {
@@ -539,7 +553,7 @@ export function SchedulingModal({
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline"  disabled={loading}>
+              <Button variant="outline" onClick={onClose} disabled={loading}>
                 Cancel
               </Button>
               <Button

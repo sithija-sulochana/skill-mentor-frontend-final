@@ -222,11 +222,27 @@ export default function ManageBookings() {
 
       if (!fullSessionRes.ok) throw new Error("Failed to fetch session details");
       const fullSession = await fullSessionRes.json();
+      console.log("Full session response:", JSON.stringify(fullSession, null, 2));
 
       // Find current session from local state for display data
       const currentSession = sessions.find((s) => s.id === sessionId);
       if (!currentSession) return;
-      console.log("Current Session:", currentSession.student?.id);
+
+      // Handle both flat (mentorId) and nested (mentor.id) response structures
+      // Also check for mentor object with id property at different nesting levels
+      const studentId = fullSession.studentId ?? fullSession.student?.id ?? currentSession.studentId;
+      const mentorId = fullSession.mentorId ?? fullSession.mentor?.id ?? currentSession.mentorId;
+      const subjectId = fullSession.subjectId ?? fullSession.subject?.id ?? currentSession.subjectId;
+
+      console.log("Extracted IDs:", { studentId, mentorId, subjectId });
+
+      // Validate that we have all required IDs
+      if (!mentorId) {
+        throw new Error("Mentor ID not found in session data");
+      }
+      if (!subjectId) {
+        throw new Error("Subject ID not found in session data");
+      }
 
       const res = await fetch(`${API_BASE_URL}/api/v1/sessions/${sessionId}`, {
         method: "PUT",
@@ -235,19 +251,25 @@ export default function ManageBookings() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          studentId: fullSession.student?.id,
-          mentorId: fullSession.mentor?.id,
-          subjectId: fullSession.subject?.id,
+          studentId,
+          mentorId: fullSession.mentorId ?? fullSession.mentor?.id ?? currentSession.mentorId,
+          subjectId,
           sessionAt: fullSession.sessionAt || currentSession.sessionAt,
           durationMinutes: fullSession.durationMinutes || currentSession.durationMinutes,
           sessionStatus: updates.sessionStatus || fullSession.sessionStatus,
           paymentStatus: updates.paymentStatus || fullSession.paymentStatus,
           meetingLink: updates.meetingLink !== undefined ? updates.meetingLink : fullSession.meetingLink,
         }),
-      });
-      console.log(fullSession)
 
-      // console.log("Current Session:", currentSession);
+        
+      });
+      console.log("Sending to Server:", { studentId, mentorId, subjectId });
+
+      
+
+     
+
+      console.log("Current Session:", currentSession);
       if (!res.ok) {
         const errorText = await res.text();
         console.error("Update failed:", errorText);

@@ -4,6 +4,29 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
   console.log("API Base URL:", API_BASE_URL);
 
+type ApiEnvelope<T> = {
+  data?: T;
+  payload?: T;
+  result?: T;
+};
+
+function unwrapApiData<T>(raw: unknown): T {
+  if (raw && typeof raw === "object") {
+    const envelope = raw as ApiEnvelope<T>;
+    if (envelope.data !== undefined) return envelope.data;
+    if (envelope.payload !== undefined) return envelope.payload;
+    if (envelope.result !== undefined) return envelope.result;
+  }
+  return raw as T;
+}
+
+function normalizeEnrollment(raw: Enrollment): Enrollment {
+  return {
+    ...raw,
+    id: raw.id ?? (raw as Enrollment & { sessionId?: number }).sessionId ?? 0,
+  };
+}
+
 async function fetchWithAuth(
   endpoint: string,
   token: string,
@@ -76,12 +99,14 @@ export async function enrollInSession(
     method: "POST",
     body: JSON.stringify(data),
   });
-  return res.json();
+  const payload = unwrapApiData<Enrollment>(await res.json());
+  return normalizeEnrollment(payload);
 }
 
 export async function getMyEnrollments(token: string): Promise<Enrollment[]> {
   const res = await fetchWithAuth("/api/v1/sessions/my-sessions", token);
-  return res.json();
+  const payload = unwrapApiData<Enrollment[]>(await res.json());
+  return (Array.isArray(payload) ? payload : []).map(normalizeEnrollment);
 }
 
 // Student registration/sync
@@ -141,7 +166,7 @@ export async function createStudent(
     method: "POST",
     body: JSON.stringify(data),
   });
-  return res.json();
+  return unwrapApiData<Student>(await res.json());
 }
 
 /**
@@ -152,7 +177,7 @@ export async function getStudentById(
   id: number
 ): Promise<Student> {
   const res = await fetchWithAuth(`/api/v1/students/${id}`, token);
-  return res.json();
+  return unwrapApiData<Student>(await res.json());
 }
 
 /**
@@ -164,7 +189,7 @@ export async function getStudentByClerkId(
   clerkId: string
 ): Promise<Student> {
   const res = await fetchWithAuth(`/api/v1/students/id/${clerkId}`, token);
-  return res.json();
+  return unwrapApiData<Student>(await res.json());
 }
 
 /**
@@ -172,7 +197,8 @@ export async function getStudentByClerkId(
  */
 export async function getAllStudents(token: string): Promise<Student[]> {
   const res = await fetchWithAuth("/api/v1/students", token);
-  return res.json();
+  const payload = unwrapApiData<Student[]>(await res.json());
+  return Array.isArray(payload) ? payload : [];
 
 }
 
@@ -185,7 +211,7 @@ export async function createPayment(token: string, data: PaymentCreateData): Pro
     method: "POST",
     body: JSON.stringify(data),
   });
-  return res.json();
+  return unwrapApiData<Payment>(await res.json());
 }
 
 /**
@@ -193,7 +219,8 @@ export async function createPayment(token: string, data: PaymentCreateData): Pro
  */
 export async function getAllPayments(token: string): Promise<Payment[]> {
   const res = await fetchWithAuth("/api/v1/payment", token);
-  return res.json();
+  const payload = unwrapApiData<Payment[]>(await res.json());
+  return Array.isArray(payload) ? payload : [];
 }
 
 /**
@@ -201,7 +228,7 @@ export async function getAllPayments(token: string): Promise<Payment[]> {
  */
 export async function getPaymentById(token: string, id: number): Promise<Payment> {
   const res = await fetchWithAuth(`/api/v1/payment/${id}`, token);
-  return res.json();
+  return unwrapApiData<Payment>(await res.json());
 }
 
 /**
@@ -212,7 +239,7 @@ export async function updatePayment(token: string, id: number, data: PaymentUpda
     method: "PUT",
     body: JSON.stringify(data),
   });
-  return res.json();
+  return unwrapApiData<Payment>(await res.json());
 }
 
 /**
@@ -337,5 +364,5 @@ export async function updateMentorProfileImageBase64(
     method: "PUT",
     body: JSON.stringify({ profileImageUrl: base64Image }),
   });
-  return res.json();
+  return unwrapApiData<Mentor>(await res.json());
 }

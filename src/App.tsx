@@ -57,6 +57,19 @@ function App() {
             }
           />
           <Route
+            path="/payment"
+            element={
+              <>
+                <SignedIn>
+                  <PaymentPage />
+                </SignedIn>
+                <SignedOut>
+                  <LoginPage />
+                </SignedOut>
+              </>
+            }
+          />
+          <Route
             path="/payment/:sessionId"
             element={
               <>
