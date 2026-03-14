@@ -366,3 +366,107 @@ export async function updateMentorProfileImageBase64(
   });
   return unwrapApiData<Mentor>(await res.json());
 }
+
+export interface CreateReviewData {
+  studentId: number;
+  mentorId: number;
+  sessionId: number;
+  rating: number;
+  review: string;
+}
+
+export interface ReviewRecord {
+  id: number;
+  studentId?: number;
+  mentorId?: number;
+  sessionId?: number;
+  rating: number;
+  review: string;
+  createdAt?: string;
+  studentName?: string;
+  studentProfileImageUrl?: string;
+  subjectName?: string;
+}
+
+function normalizeReview(raw: unknown): ReviewRecord {
+  const item = (raw ?? {}) as Record<string, unknown>;
+  const student = (item.student ?? {}) as Record<string, unknown>;
+  const mentor = (item.mentor ?? {}) as Record<string, unknown>;
+  const session = (item.session ?? {}) as Record<string, unknown>;
+
+  const firstName = typeof student.firstName === "string" ? student.firstName : "";
+  const lastName = typeof student.lastName === "string" ? student.lastName : "";
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  return {
+    id: Number(item.id ?? 0),
+    studentId: Number(item.studentId ?? student.id ?? 0) || undefined,
+    mentorId: Number(item.mentorId ?? mentor.id ?? 0) || undefined,
+    sessionId: Number(item.sessionId ?? session.id ?? 0) || undefined,
+    rating: Number(item.rating ?? 0),
+    review: typeof item.review === "string" ? item.review : "",
+    createdAt:
+      typeof item.createdAt === "string"
+        ? item.createdAt
+        : typeof item.updatedAt === "string"
+        ? item.updatedAt
+        : undefined,
+    studentName:
+      typeof item.studentName === "string"
+        ? item.studentName
+        : fullName || undefined,
+    studentProfileImageUrl:
+      typeof item.studentProfileImageUrl === "string"
+        ? item.studentProfileImageUrl
+        : typeof student.profileImageUrl === "string"
+        ? student.profileImageUrl
+        : undefined,
+    subjectName:
+      typeof item.subjectName === "string"
+        ? item.subjectName
+        : typeof session.subjectName === "string"
+        ? session.subjectName
+        : undefined,
+  };
+}
+
+export async function createReview(
+  token: string,
+  data: CreateReviewData,
+): Promise<ReviewRecord> {
+  const res = await fetchWithAuth("/api/v1/reviews", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  const payload = unwrapApiData<unknown>(await res.json());
+  return normalizeReview(payload);
+}
+
+export async function getReviewsByMentorId(
+  mentorId: number,
+  token?: string,
+): Promise<ReviewRecord[]> {
+  const headers: HeadersInit = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
+  const res = await fetch(`${API_BASE_URL}/api/v1/reviews/mentor/${mentorId}`, {
+    headers,
+  });
+
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(message || "Failed to fetch reviews");
+  }
+
+  const payload = unwrapApiData<unknown>(await res.json());
+  const asRecord = (payload ?? {}) as Record<string, unknown>;
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray(asRecord.content)
+    ? asRecord.content
+    : [];
+
+  return list.map(normalizeReview);
+}

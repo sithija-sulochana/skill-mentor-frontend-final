@@ -24,7 +24,7 @@ import {
   AlertCircle,
   BookOpen,
 } from "lucide-react";
-import { getMyEnrollments } from "@/lib/api";
+import { createReview, getMyEnrollments } from "@/lib/api";
 import type { Enrollment } from "@/types";
 
 interface ReviewFormData {
@@ -35,7 +35,8 @@ interface ReviewFormData {
   review: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
 
 export default function ReviewMentorSession() {
   const { getToken } = useAuth();
@@ -137,51 +138,57 @@ export default function ReviewMentorSession() {
         throw new Error("Session not found");
       }
 
-      // Fetch full session details to get mentor ID and student ID
-      const sessionRes = await fetch(
-        `${API_BASE_URL}/api/v1/sessions/${selectedSession.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      let resolvedStudentId =
+        typeof selectedSession.studentId === "number"
+          ? selectedSession.studentId
+          : undefined;
+      let resolvedMentorId =
+        typeof selectedSession.mentorId === "number"
+          ? selectedSession.mentorId
+          : undefined;
 
-      if (!sessionRes.ok) {
-        throw new Error("Failed to fetch session details");
+      if (!resolvedStudentId || !resolvedMentorId) {
+        const sessionRes = await fetch(
+          `${API_BASE_URL}/api/v1/sessions/${selectedSession.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!sessionRes.ok) {
+          throw new Error("Failed to fetch session details");
+        }
+
+        const fullSession = (await sessionRes.json()) as {
+          id?: number;
+          studentId?: number;
+          mentorId?: number;
+          student?: { id?: number };
+          mentor?: { id?: number };
+        };
+
+        resolvedStudentId =
+          resolvedStudentId ?? fullSession.studentId ?? fullSession.student?.id;
+        resolvedMentorId =
+          resolvedMentorId ?? fullSession.mentorId ?? fullSession.mentor?.id;
       }
 
-      const fullSession = await sessionRes.json();
-      console.log("Fetched full session details:", fullSession);
+      if (!resolvedStudentId || !resolvedMentorId) {
+        throw new Error(
+          "Could not resolve student or mentor ID for this session. Please try again.",
+        );
+      }
 
-      const reviewDTO = {
-        studentId: fullSession.student?.id,
-        mentorId: fullSession.mentor?.id,
-        sessionId: fullSession.id,
+      await createReview(token, {
+        studentId: resolvedStudentId,
+        mentorId: resolvedMentorId,
+        sessionId: selectedSession.id,
         rating: formData.rating,
         review: formData.review.trim(),
-      };
-
-
-      
-      console.log("Full Session Data:", fullSession);
-
-      console.log("Submitting review:", reviewDTO);
-
-      const res = await fetch(`${API_BASE_URL}/api/v1/reviews`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(reviewDTO),
       });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Failed to submit review");
-      }
 
       setSubmitted(true);
       setFormData({ mentorId: "", sessionId: "", rating: 0, review: "" });

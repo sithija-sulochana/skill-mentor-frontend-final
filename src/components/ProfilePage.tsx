@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/hooks/use-toast";
-import { uploadMentorProfileImage } from "@/lib/api";
+import {
+  getReviewsByMentorId,
+  type ReviewRecord,
+  uploadMentorProfileImage,
+} from "@/lib/api";
 import {
   Mail,
   Phone,
@@ -75,19 +79,6 @@ interface Session {
   subject?: Subject;
 }
 
-interface Review {
-  id: number;
-  studentId?: number;
-  mentorId: number;
-  sessionId: number;
-  rating: number;
-  review: string;
-  createdAt: string;
-  studentName?: string;
-  studentProfileImageUrl?: string;
-  subjectName?: string;
-}
-
 
 export default function ProfilePage() {
   const { mentorId } = useParams();
@@ -96,7 +87,7 @@ export default function ProfilePage() {
 
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<ReviewRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -145,16 +136,8 @@ export default function ProfilePage() {
       }
 
       // Fetch Reviews for this mentor
-      const reviewsRes = await fetch(
-        `${API_BASE_URL}/api/v1/reviews/mentor/${mentorData.id}`
-      );
-
-      console.log("Fetched reviews response:", reviewsRes);
-
-      if (reviewsRes.ok) {
-        const reviewsData: Review[] = await reviewsRes.json();
-        setReviews(reviewsData);
-      }
+      const reviewsData = await getReviewsByMentorId(mentorData.id, token ?? undefined);
+      setReviews(reviewsData);
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -755,11 +738,13 @@ export default function ProfilePage() {
 
                         {/* Date */}
                         <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
-                          {new Date(review.createdAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                          {review.createdAt
+                            ? new Date(review.createdAt).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })
+                            : "Recent review"}
                         </p>
                       </div>
                     </div>

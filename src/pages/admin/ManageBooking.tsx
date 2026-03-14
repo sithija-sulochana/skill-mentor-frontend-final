@@ -251,9 +251,9 @@ export default function ManageBookings() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          studentId,
-          mentorId: fullSession.mentorId ?? fullSession.mentor?.id ?? currentSession.mentorId,
-          subjectId,
+          // studentId,
+          // // mentorId,
+          // subjectId,
           sessionAt: fullSession.sessionAt || currentSession.sessionAt,
           durationMinutes: fullSession.durationMinutes || currentSession.durationMinutes,
           sessionStatus: updates.sessionStatus || fullSession.sessionStatus,
