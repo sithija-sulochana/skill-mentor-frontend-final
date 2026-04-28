@@ -42,7 +42,7 @@ function CreateSubject() {
     mentorId: "",
   });
 
-  // 1. Fetch real mentors from your backend on mount
+// Fetch real mentors from your backend on mount
   useEffect(() => {
     const fetchMentors = async () => {
       try {

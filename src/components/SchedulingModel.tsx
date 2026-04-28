@@ -149,11 +149,9 @@ export function SchedulingModal({
               ? raw.data
               : [];
           // Filter sessions for the selected date
-          const selectedDateStr = date.toISOString().split("T")[0];
+          const selectedDateStr = date.toLocaleDateString("en-CA");
           const dayBookings = sessions.filter((s: { sessionAt: string }) => {
-            const sessionDate = new Date(s.sessionAt)
-              .toISOString()
-              .split("T")[0];
+            const sessionDate = new Date(s.sessionAt).toLocaleDateString("en-CA");
             return sessionDate === selectedDateStr;
           });
           setBookedSessions(dayBookings);

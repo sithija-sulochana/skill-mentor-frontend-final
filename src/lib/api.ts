@@ -110,8 +110,9 @@ export async function getMyEnrollments(token: string): Promise<Enrollment[]> {
 }
 
 // Student registration/sync
+
 export interface StudentCreateData {
-  studentId: string;    // Clerk user ID
+  studentId: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -155,7 +156,7 @@ export interface PaymentUpdateData {
 
 /**
  * Register/create student in backend.
- * Sends Clerk user credentials in the request body.
+ * Sends Clerk credentials while backend can also derive identity from principal.
  * Called automatically when user logs in via Clerk.
  */
 export async function createStudent(
@@ -391,12 +392,15 @@ export interface ReviewRecord {
 function normalizeReview(raw: unknown): ReviewRecord {
   const item = (raw ?? {}) as Record<string, unknown>;
   const student = (item.student ?? {}) as Record<string, unknown>;
+  console.log("Student object in review normalization:", student);
   const mentor = (item.mentor ?? {}) as Record<string, unknown>;
   const session = (item.session ?? {}) as Record<string, unknown>;
 
   const firstName = typeof student.firstName === "string" ? student.firstName : "";
   const lastName = typeof student.lastName === "string" ? student.lastName : "";
   const fullName = `${firstName} ${lastName}`.trim();
+
+  console.log("Student full Name : " + fullName);
 
   return {
     id: Number(item.id ?? 0),
@@ -429,6 +433,8 @@ function normalizeReview(raw: unknown): ReviewRecord {
         : undefined,
   };
 }
+
+
 
 export async function createReview(
   token: string,

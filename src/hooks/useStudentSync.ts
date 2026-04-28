@@ -5,7 +5,7 @@ import { createStudent } from "@/lib/api";
 /**
  * Hook that automatically registers the logged-in Clerk user with the backend database.
  * Creates a new student record if they don't exist.
- * Sends Clerk user credentials (studentId, email, firstName, lastName) in the request body.
+ * Sends Clerk user details to backend and authenticates with Clerk token.
  * Should be called once in a top-level component (e.g., Layout).
  */
 export function useStudentSync() {
@@ -27,7 +27,6 @@ export function useStudentSync() {
           return;
         }
 
-        // Extract user credentials from Clerk
         const email =
           user.primaryEmailAddress?.emailAddress ||
           user.emailAddresses[0]?.emailAddress ||
@@ -38,17 +37,13 @@ export function useStudentSync() {
           return;
         }
 
-        // Build student data from Clerk user
         const studentData = {
-          studentId: user.id,           // Clerk user ID
-          email: email,
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
+          studentId: user.id,
+          email,
+          firstName: user.firstName || "Student",
+          lastName: user.lastName || "User",
         };
 
-        console.log(token)
-
-        // Send credentials to backend
         const student = await createStudent(token, studentData);
         console.log("Student sync successful:", student);
         console.log("Student registered successfully:", student.id);
